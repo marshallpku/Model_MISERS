@@ -1,7 +1,7 @@
 
 gc()
 
-# Tier_select <- "t1"
+ Tier_select <- "t1"
 
 #*********************************************************************************************************
 # 1.1 Load data,  for all tiers ####
@@ -9,35 +9,35 @@ gc()
 
 # Plan information
 # source("LAFPP_Data_RP2000.R")
- source("LAFPP_Data_PlanInfo.R")
- source("LAFPP_Data_ImportMemberData.R")
+ source("MISERS_Data_PlanInfo.R")
+ source("MISERS_Data_ImportMemberData.R")
 
-load("Data_inputs/LAFPP_PlanInfo.RData")    # for all tiers
-load("Data_inputs/LAFPP_MemberData.RData")  # for all tiers
+load("Data_inputs/MISERS_PlanInfo.RData")    # for all tiers
+load("Data_inputs/MISERS_MemberData.RData")  # for all tiers
 
-salgrowth %<>% mutate(salgrowth = salgrowth * 1.1)
+# salgrowth %<>% mutate(salgrowth = salgrowth * 1.1)
 
-pct.init.ret.la <-  0.3
-pct.init.ret.ca  <- 1 - pct.init.ret.la
-
-pct.init.disb.la <-  0.3
-pct.init.disb.ca  <- 1 - pct.init.disb.la
-
-init_retirees.la_all <- init_retirees_all %>%
-  mutate(nretirees.la = nretirees * pct.init.ret.la) %>% 
-  select(-nretirees)
-
-init_retirees.ca_all <- init_retirees_all %>%
-  mutate(nretirees.ca = nretirees * pct.init.ret.ca) %>% 
-  select(-nretirees)
-
-init_disb.la_all <- init_disb_all %>%
-  mutate(ndisb.la = ndisb * pct.init.disb.la) %>% 
-  select(-ndisb)
-
-init_disb.ca_all <- init_disb_all %>%
-  mutate(ndisb.ca = ndisb * pct.init.disb.ca) %>% 
-  select(-ndisb)
+# pct.init.ret.la <-  0.3
+# pct.init.ret.ca  <- 1 - pct.init.ret.la
+# 
+# pct.init.disb.la <-  0.3
+# pct.init.disb.ca  <- 1 - pct.init.disb.la
+# 
+# init_retirees.la_all <- init_retirees_all %>%
+#   mutate(nretirees.la = nretirees * pct.init.ret.la) %>% 
+#   select(-nretirees)
+# 
+# init_retirees.ca_all <- init_retirees_all %>%
+#   mutate(nretirees.ca = nretirees * pct.init.ret.ca) %>% 
+#   select(-nretirees)
+# 
+# init_disb.la_all <- init_disb_all %>%
+#   mutate(ndisb.la = ndisb * pct.init.disb.la) %>% 
+#   select(-ndisb)
+# 
+# init_disb.ca_all <- init_disb_all %>%
+#   mutate(ndisb.ca = ndisb * pct.init.disb.ca) %>% 
+#   select(-ndisb)
 
 
 
@@ -47,7 +47,7 @@ init_disb.ca_all <- init_disb_all %>%
 #*********************************************************************************************************
 
 # Decrement tables
-source("LAFPP_Model_Decrements.R")
+source("MISERS_Model_Decrements.R")
 
 list.decrements <- get_decrements(Tier_select)
 decrement.model      <- list.decrements$decrement.model

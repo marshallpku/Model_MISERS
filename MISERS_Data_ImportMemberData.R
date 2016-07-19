@@ -482,7 +482,7 @@ get_init.terms.temp <- function(file, sheet, planname, cellStart = "B2", cellEnd
 
 prop.occupation <- read_ExcelRange(file_memberData, "prop.occupation") %>% 
   mutate(n.all = correction + conservation + others,
-         pct.concervation   = conservation / n.all,
+         pct.conservation   = conservation / n.all,
          pct.correction     = correction / n.all,
          pct.others         = others / n.all)
 

@@ -13,7 +13,7 @@ get_decrements <- function(Tier_select,
                            .Global_paramlist = Global_paramlist,
                            .paramlist = paramlist){
 
-# Tier_select <- "t5"
+# Tier_select <- "t1"
 # 
 # .Global_paramlist = Global_paramlist
 # .paramlist = paramlist
@@ -35,7 +35,7 @@ assign_parmsList(.paramlist,        envir = environment())
   # Wives are 3 years younger than husbands. 
 
 mortality.model <- data.frame(age = range_age) %>% 
-  left_join(mortality_LAFPP) %>% 
+  left_join(mortality_MISERS) %>% 
   mutate(qxm.pre = qxm.pre.male  * pct.male + qxm.pre.female  * pct.female,   # mortality for actives
          qxm.d   = (qxm.d.male    * pct.male + qxm.d.female  * pct.female) * 1,
          
@@ -44,7 +44,7 @@ mortality.model <- data.frame(age = range_age) %>%
          qxm.deathBen = ifelse(age == max(age), 1, qxm.deathBen)
          ) %>% 
   select(age, qxm.pre, qxm.post.male, qxm.post.female, qxm.d, qxm.deathBen)
-# mortality.model
+ mortality.model
 
 
 
@@ -73,7 +73,7 @@ mortality.post.model <- expand.grid(age = range_age,
     qxm.post.W = qxm.post.male * w.male + qxm.post.female * w.female, # dynamically weighted mortality
     pxm.post.W = 1 - qxm.post.W,
     
-    COLA.scale = (1 + tier.param[Tier_select,"cola"])^(row_number() - 1 ),
+    COLA.scale = (1 + cola)^(row_number() - 1 ),
     B =  COLA.scale,
     ax.r.W     =  get_tla(pxm.post.W, i, COLA.scale),
     liab.la.W = B * ax.r.W    # "la" for life annuity. liability for $1's benefit payment at retirement. 
@@ -87,51 +87,34 @@ mortality.post.model <- expand.grid(age = range_age,
  # after r.vben:  qxm.post.W with age.r == r.vben
 
 mortality.model %<>% left_join(mortality.post.model %>% ungroup %>%  
-                               filter(age.r == tier.param[Tier_select,"r.vben"]) %>% 
+                               filter(age.r == r.vben) %>% 
                                select(age, qxm.post.term = qxm.post.W)) %>% 
-                     mutate(qxm.term = ifelse(age < tier.param[Tier_select,"r.vben"], qxm.pre, qxm.post.term)) %>% 
+                     mutate(qxm.term = ifelse(age < r.vben, qxm.pre, qxm.post.term)) %>% 
                      select(-qxm.post.term)
 
 
 
 # disability rate                            
 disbrates.model <- disbRates %>%  
-  mutate(qxd = qxd.fire * prop.occupation[Tier_select, "pct.fire"] + 
-               qxd.plc  * prop.occupation[Tier_select, "pct.plc"]) %>% 
+  mutate(qxd = qxd.nonduty + qxd.duty) %>% 
   select(age, qxd)
 
- # disb rate not applied to members eligible to DROP
 
-if(Tier_select %in% c("t1", "t2", "t4")){
-  disbrates.model <- left_join(expand.grid(age = range_age, ea = range_ea),
-                               disbrates.model) %>%
-                     mutate(yos = age - ea,
-                            qxd = ifelse(yos >= 25, 0, qxd))
-} else {
-  disbrates.model <- left_join(expand.grid(age = range_age, ea = range_ea),
-                               disbrates.model) %>%
-    mutate(yos = age - ea,
-           qxd = ifelse(yos >= 25 & age >= 50, 0, qxd))
-}
-                   
 
-disbrates.model
 # term rates
 termrates.model <- termRates %>% 
-  mutate(qxt = qxt.fire * prop.occupation[Tier_select, "pct.fire"] + 
-         qxt.plc *  prop.occupation[Tier_select, "pct.plc"]) %>% 
-  select(age, ea, yos, qxt)
+  select(ea, age, yos, qxt)
                                 
 
+
 # retirement rates
-retrates.model  <- retRates %>% mutate(qxr.t1 = 0,
-                                      qxr.t2 = qxr.t2t4.fire * prop.occupation["t2", "pct.fire"] + qxr.t2t4.plc * prop.occupation["t2", "pct.plc"],
-                                      qxr.t4 = qxr.t2t4.fire * prop.occupation["t4", "pct.fire"] + qxr.t2t4.plc * prop.occupation["t4", "pct.plc"],
-                                      qxr.t3 = qxr.t3t5.fire * prop.occupation["t3", "pct.fire"] + qxr.t3t5.plc * prop.occupation["t3", "pct.plc"],
-                                      qxr.t5 = qxr.t3t5.fire * prop.occupation["t5", "pct.fire"] + qxr.t3t5.plc * prop.occupation["t5", "pct.plc"],
-                                      qxr.t6 = qxr.t6.fire * prop.occupation["t6", "pct.fire"] + qxr.t6.plc * prop.occupation["t6", "pct.plc"]) %>% 
-                  select(age, matches(paste0(Tier_select, "$") )) %>% 
-                  rename_("qxr" = paste0("qxr.", Tier_select))
+retrates.model  <- retRates %>% 
+  mutate(qxr.t1 = qxr.corrections * prop.occupation["t1", "pct.correction"] + qxr.others * prop.occupation["t1", "pct.others"] + 
+                  qxr.conservation * prop.occupation["t1", "pct.conservation"]
+         ) %>% 
+  select(age, matches(paste0(Tier_select, "$") )) %>% 
+  rename_("qxr" = paste0("qxr.", Tier_select))
+
 retrates.model                                     
 
 #*************************************************************************************************************
@@ -157,12 +140,15 @@ decrement.model
 
 ## Imposing restrictions 
 decrement.model %<>% mutate(
-  # 1. Coerce termination rates to 0 when eligible for early retirement or reaching than r.full(when we assume terms start to receive benefits). 
-  qxt = ifelse((age >= tier.param[Tier_select, "r.age"] & (age - ea) >= tier.param[Tier_select, "r.yos"]) | age >= tier.param[Tier_select, "r.vben"], 0, qxt),
+  # 1. Coerce termination rates to 0 when eligible for early retirement or reaching r.full(when we assume terms start to receive benefits). 
+  qxt = ifelse((age >= r.age1 & yos >= r.yos1 ) |  # retirement rule 1 
+               (age >= r.age2 & yos >= r.yos2 ) |  # retirement rule 2
+                age >= r.vben, 0, qxt), 
 
   # 2. Coerce retirement rates to 0 when age greater than r.max
   # Assume retirement rates applies only when they are applicable (according to Bob North.
-  qxr = ifelse(yos >= tier.param[Tier_select, "r.yos"] & age %in% tier.param[Tier_select, "r.age"]:r.max, qxr, 0)
+  qxr = ifelse((age >= r.age1 & yos >= r.yos1 ) | (age >= r.age2 & yos >= r.yos2), qxr, 0),
+  qxr = ifelse(age > r.max, 0, qxr)
 )
   
 decrement.model

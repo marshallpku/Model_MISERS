@@ -117,11 +117,11 @@ disbRates <- data.frame(age = 20:74) %>%
                                      qxd.nonduty),
  
          qxd.duty    = ifelse(age > max(age[!is.na(qxd.duty)]), 
-                                    qxd.duty,
-                                    qxd.duty[age == max(age[!is.na(qxd.duty)])]),
+                                    qxd.duty[age == max(age[!is.na(qxd.duty)])],
+                                    qxd.duty),
          qxd.duty    = ifelse(age < min(age[!is.na(qxd.duty)]), 
-                                    qxd.duty,
-                                    qxd.duty[age == min(age[!is.na(qxd.duty)])])
+                                    qxd.duty[age == min(age[!is.na(qxd.duty)])],
+                                    qxd.duty)
          
          )
 
