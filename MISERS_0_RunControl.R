@@ -50,31 +50,24 @@ source("Functions.R")
 # Notes on disability benefits
   # qxd is the sum of qxd.nonduty and qxd.duty
   # assume all disabilities are non-duty in the model 
+  # AS of July19 2016
+    # Model disability benefit as life annuity. 
+    
 
 
 # Notes on retirement benefit
   # retirement rates are weighted averages of conservation, correction and others. 
   # For now(July 19, 2016), use retiremetn rule for "others" for all members. 
 
-
-
-
-# Notes on disability benefits
-# As of June26 2016
-  # all disabilities are assumed as service connected (90% in the AV)
-  # disability rate not applied to members eligible to DROP
-  # Disability are modeled as life annuity. 
-  # Plan to apply an adjustment factor to mortality after disability mortality 
-  # # of disabled at age min.age(20) must be 0.
-# AS of June30 2016
-  # Model disability benefit as contingent annuity. 
-  # Modeling method is the same as that for contingent annuity for service retirement benefit. 
-  # For LAFPP, benefits for QSSs of disability retirees are simplified as a fixed proportion of disability retirees' benefit. 
+# Notes on pre-retirement death benefits
+  # Currently, the benefit is 100% of retirement benefit. In later versions, the benefit should be 
+  # reduced in accordance with a 100% Joint and Survivor form of payment.  
 
 
 # Notes on initial service retirees and disability retirees
   # A proportion of them are assumed to be life annuitants while the rest contingent annuitants.
   # As of 7/9/2016, the proportion of life annuitants is 20%. 
+
 
 
 
@@ -154,6 +147,8 @@ for(runName in runList$runname ){
   
   paramlist$fasyears <- 3
   
+  paramlist$bfactor <- 0.015
+  
   paramlist$cola <- 0.03
     
   paramlist$startingSal_growth <- 0.04
@@ -194,7 +189,8 @@ for(runName in runList$runname ){
     #EEC_fixed <- "TRUE",
     #ConPolicy <- "ADC",
     #EEC_rate <- 0.05
-  #)
+  
+  paramlist$EEC_rate <- 0.04
 
   
   # Parameters derived from the parameter list above. 

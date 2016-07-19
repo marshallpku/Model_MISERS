@@ -41,7 +41,7 @@ get_tierData <- function(df, tier, grouping = paramlist$Grouping) df %<>% filter
 #*************************************************************************************************************
 #                        Create weighed salary scale for facutly and staff members                      #####                  
 #*************************************************************************************************************
-# No need to modify salary growth table for LAFPP
+# No need to modify salary growth table for MISERS
 get_salgrowth <- function() salgrowth
 
  
@@ -135,7 +135,7 @@ fill_startSal <- function(.actives,         # = tailored_demoData$actives,
   
 }
 
-# get_tierData(init_actives_all, "t6") %>%  fill_startSal %>% ungroup %>% arrange(ea, age)
+#get_tierData(init_actives_all, "t1") %>%  fill_startSal %>% ungroup %>% arrange(ea, age) %>% filter(age == ea)
 
 
 
@@ -201,7 +201,8 @@ salary.fn <- get_salary(SS.all.fn, init_sal.fn)
 return(salary.fn)
 }
 
- # get_salary_proc("t6") %>% arrange(start.year, ea, age)
+
+# x <-  get_salary_proc("t1") %>% arrange(start.year, ea, age)
 
 
 
@@ -263,19 +264,16 @@ get_benefit.disb <- function(
 
 
 
+# get_tierData(init_retirees_all, "t1") %>% get_benefit()
+# get_tierData(init_disb_all, "t3") %>% get_benefit.disb()
 
-
-
-
-
-# get_tierData(init_retirees_all, "t3") %>% get_benefit()
-get_tierData(init_disb_all, "t3") %>% get_benefit.disb()
 
 #*************************************************************************************************************
 #                               Import initial HAPC for vested terminated                           #####                  
 #*************************************************************************************************************
-
 #HAPC_terms <- terminated %>% select(age, yos, fas = HAPC)
+
+
 
 
 #*************************************************************************************************************
@@ -310,9 +308,6 @@ get_initPop <- function (.actives,    #= init_actives,
   
   init_actives <- expand.grid(ea = range_ea, age = range_age) %>% left_join(init_actives) 
     #mutate(nactives = n_init_actives * nactives/sum(nactives, na.rm = TRUE)) %>%
-     
- 
-  
   init_actives %<>% spread(age, nactives, fill = 0) %>% select(-ea) %>% as.matrix 
   
   
@@ -323,15 +318,17 @@ get_initPop <- function (.actives,    #= init_actives,
   
   
   init_terms <- .terminated %>% select(ea, age, nterms)
-  init_terms <-  expand.grid(ea = range_ea, age = range_age) %>% left_join(init_terms) %>% 
+  init_terms <-  expand.grid(ea = range_ea, age = range_age) %>% left_join(init_terms) %>%
     #mutate(nactives = n_init_actives * nactives/sum(nactives, na.rm = TRUE)) %>%
-    spread(age, nterms, fill = 0) %>% select(-ea) %>% as.matrix 
-  
-  init_disb <- .disb %>% select(age, ndisb.la) %>% mutate(ea = min.age) 
-  init_disb <- expand.grid(ea = range_ea, age = range_age) %>% left_join(init_disb) %>% 
-    #mutate(nretirees = n_init_retirees * nretirees/sum(nretirees, na.rm = TRUE)) %>% 
+    spread(age, nterms, fill = 0) %>% select(-ea) %>% as.matrix
+
+  init_disb <- .disb %>% select(age, ndisb.la) %>% mutate(ea = min.age)
+  init_disb <- expand.grid(ea = range_ea, age = range_age) %>% left_join(init_disb) %>%
+    #mutate(nretirees = n_init_retirees * nretirees/sum(nretirees, na.rm = TRUE)) %>%
     spread(age, ndisb.la, fill = 0) %>% select(-ea) %>% as.matrix
   
+  init_terms <- 0
+  init_disb <- 0
   
   return(list(actives = init_actives, retirees = init_retirees, terms = init_terms, disb = init_disb))
 }
@@ -377,9 +374,13 @@ get_entrantsDist <- function(.actives,          #= tailored_demoData$actives,
   #nact %>% spread(age, nactives)
   
   ## Distributon by simple rule
-  nact1 <- nact %>% filter(age - ea <= 4) %>% group_by(ea) %>% summarise(avg_ent = mean(nactives)) %>% right_join(data.frame(ea = .range_ea))
-  while(any(is.na(nact1$avg_ent))) nact1 %<>% mutate(avg_ent = ifelse(is.na(avg_ent), lag(avg_ent) , avg_ent))
-  # nact1
+  nact1 <- nact %>% filter(age - ea <= 4) %>% group_by(ea) %>% summarise(avg_ent = mean(nactives)) %>% right_join(data.frame(ea = range_ea))
+  N <- 1
+  while(any(is.na(nact1$avg_ent))) {
+    if(N <= length(nact1)) nact1 %<>% mutate(avg_ent = ifelse(is.na(avg_ent), lag(avg_ent) , avg_ent)) else
+      nact1 %<>% mutate(avg_ent = ifelse(is.na(avg_ent), lead(avg_ent) , avg_ent))
+    N <- N + 1
+  }
   
   nact <- splong(nact, "ea", .range_ea) %>% splong("age", .range_ea) %>% filter(age >= ea)
   #nact <- splong(nact, "ea", range_ea) %>% filter(age >= ea)
@@ -440,12 +441,12 @@ get_initPop_tier <- function(Tier_select_, grouping_ =  paramlist$Grouping){
   
   init_actives        <- get_tierData(init_actives_all, Tier_select_)
   init_retirees       <- get_tierData(init_retirees.la_all, Tier_select_)
-  #init_beneficiaries <- get_tierData(init_beneficiaries_all, Tier_select_)
-  # init_terminated     <- init_terms_all %>%  filter(grepl(Tier_select_, planname))
   init_terminated     <- get_tierData(init_terms_all, Tier_select_)
   init_disb           <- get_tierData(init_disb.la_all,  Tier_select_)
+  #init_beneficiaries <- get_tierData(init_beneficiaries_all, Tier_select_)
   
-  get_initPop(init_actives, init_retirees, init_terminated, init_disb)
+  get_initPop(init_actives, init_retirees,
+              init_terminated, init_disb)
   
 }
 

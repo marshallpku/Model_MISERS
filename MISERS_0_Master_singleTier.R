@@ -3,6 +3,12 @@ gc()
 
  Tier_select <- "t1"
 
+ 
+ 
+ 
+ 
+ 
+ 
 #*********************************************************************************************************
 # 1.1 Load data,  for all tiers ####
 #*********************************************************************************************************
@@ -17,27 +23,27 @@ load("Data_inputs/MISERS_MemberData.RData")  # for all tiers
 
 # salgrowth %<>% mutate(salgrowth = salgrowth * 1.1)
 
-# pct.init.ret.la <-  0.3
-# pct.init.ret.ca  <- 1 - pct.init.ret.la
-# 
-# pct.init.disb.la <-  0.3
-# pct.init.disb.ca  <- 1 - pct.init.disb.la
-# 
-# init_retirees.la_all <- init_retirees_all %>%
-#   mutate(nretirees.la = nretirees * pct.init.ret.la) %>% 
-#   select(-nretirees)
-# 
-# init_retirees.ca_all <- init_retirees_all %>%
-#   mutate(nretirees.ca = nretirees * pct.init.ret.ca) %>% 
-#   select(-nretirees)
-# 
-# init_disb.la_all <- init_disb_all %>%
-#   mutate(ndisb.la = ndisb * pct.init.disb.la) %>% 
-#   select(-ndisb)
-# 
-# init_disb.ca_all <- init_disb_all %>%
-#   mutate(ndisb.ca = ndisb * pct.init.disb.ca) %>% 
-#   select(-ndisb)
+pct.init.ret.la <-  0.3
+pct.init.disb.la <-  0.3
+
+pct.init.disb.ca  <- 1 - pct.init.disb.la
+pct.init.ret.ca  <- 1 - pct.init.ret.la
+
+init_retirees.la_all <- init_retirees_all %>%
+  mutate(nretirees.la = nretirees * pct.init.ret.la) %>%
+  select(-nretirees)
+
+init_retirees.ca_all <- init_retirees_all %>%
+  mutate(nretirees.ca = nretirees * pct.init.ret.ca) %>%
+  select(-nretirees)
+
+init_disb.la_all <- init_disb_all %>%
+  mutate(ndisb.la = ndisb * pct.init.disb.la) %>%
+  select(-ndisb)
+
+init_disb.ca_all <- init_disb_all %>%
+  mutate(ndisb.ca = ndisb * pct.init.disb.ca) %>%
+  select(-ndisb)
 
 
 
@@ -80,7 +86,7 @@ mortality.post.model <- list.decrements$mortality.post.model
 #*********************************************************************************************************
 # 1.3  Actual investment return, for all tiers ####
 #*********************************************************************************************************
-source("LAFPP_Model_InvReturns.R")
+source("MISERS_Model_InvReturns.R")
 i.r <- gen_returns()
 #i.r[, 3] <-  c(paramlist$ir.mean, paramlist$ir.mean/2, rep(paramlist$ir.mean, Global_paramlist$nyear - 2))
 
@@ -90,27 +96,22 @@ i.r <- gen_returns()
 # 1.2 Create plan data ####
 #*********************************************************************************************************
 
-source("LAFPP_Model_PrepData.R")
+source("MISERS_Model_PrepData.R")
 
 salary       <- get_salary_proc(Tier_select)
 benefit      <- get_benefit_tier(Tier_select)
 benefit.disb <- get_benefit.disb_tier(Tier_select)
 init_pop     <- get_initPop_tier(Tier_select)
+entrants_dist  <- get_entrantsDist_tier("t1")
 
-if(Tier_select == "t6"){
-  entrants_dist  <- get_entrantsDist_tier("t6")} else  
-  entrants_dist  <- numeric(length(paramlist$range_ea))
-
-
-bfactor %<>% select(yos, matches(Tier_select)) %>% 
-             rename_("bfactor" = paste0("bf.", Tier_select))
+ 
 
 
 
 #*********************************************************************************************************
 # 2. Demographics ####
 #*********************************************************************************************************
-source("LAFPP_Model_Demographics.R")
+source("MISERS_Model_Demographics.R")
 gc()
 pop <- get_Population()
 
@@ -118,46 +119,21 @@ pop <- get_Population()
 #*********************************************************************************************************
 # 3. Actuarial liabilities and benefits for contingent annuitants and survivors ####
 #*********************************************************************************************************
-source("LAFPP_Model_ContingentAnnuity.R")
+source("MISERS_Model_ContingentAnnuity.R")
 
 # For service retirement
 liab.ca <- get_contingentAnnuity(Tier_select, 
-                                 tier.param[Tier_select, "factor.ca"],
+                                 paramlist$factor.ca,
                                  min(paramlist$range_age.r):100, 
-                                 apply_reduction = FALSE)
+                                 apply_reduction = TRUE)
 
 # For disability benefit
 range_age.disb <-  min(paramlist$range_age):100   # max(paramlist$range_age.r)
 liab.disb.ca <- get_contingentAnnuity(Tier_select, 
-                                      tier.param[Tier_select, "factor.ca.disb"],
+                                      paramlist$factor.ca.disb,
                                       range_age.disb, 
-                                      apply_reduction = FALSE) %>% 
+                                      apply_reduction = TRUE) %>% 
                 rename(age.disb = age.r)
-
-
-
-# liab.ca0 <- get_contingentAnnuity(Tier_select, 
-#                                  0 ,
-#                                  paramlist$range_age.r, 
-#                                  apply_reduction = FALSE)
-
-
-# liab.disb.ca0 <- get_contingentAnnuity(Tier_select, 
-#                                       0,
-#                                       range_age.disb, 
-#                                       apply_reduction = FALSE)
-
-# 
- #  liab.ca %>% filter(age.r + 10 == age)
- # # liab.ca0 %>% filter(age.r + 10 == age)
- # 
- # 
- # liab.disb.ca %>% filter(age.disb + 10 == age)
- # 
- # liab.disb.ca %>% filter(age.disb == 30)
- 
- # 
-# liab.disb.ca0 %>% filter(age.r + 1 == age)
 
 
 
@@ -165,7 +141,7 @@ liab.disb.ca <- get_contingentAnnuity(Tier_select,
 #*********************************************************************************************************
 # 4. Individual actuarial liabilities, normal costs and benenfits ####
 #*********************************************************************************************************
-source("LAFPP_Model_IndivLiab.R")
+source("MISERS_Model_IndivLiab.R")
 gc()
 
 
@@ -178,7 +154,7 @@ liab <- get_indivLab(Tier_select)
 #*********************************************************************************************************
 # 5. Aggregate actuarial liabilities, normal costs and benenfits ####
 #*********************************************************************************************************
-source("LAFPP_Model_AggLiab.R")
+source("MISERS_Model_AggLiab.R")
 gc()
 
 AggLiab <- get_AggLiab(Tier_select,
@@ -191,7 +167,7 @@ AggLiab <- get_AggLiab(Tier_select,
 #*********************************************************************************************************
 # 6.  Simulation ####
 #*********************************************************************************************************
-source("LAFPP_Model_Sim.R")
+source("MISERS_Model_Sim.R")
 penSim_results <- run_sim(Tier_select, AggLiab)
 
 
@@ -206,7 +182,7 @@ var_display1 <- c("Tier", "sim", "year", "FR", "MA", "AL",
                   "AL.act", "AL.act.disb", "AL.act.v", "AL.la", "AL.ca", "AL.term",
                   # "AL.act", "AL.la", "AL.ca", "AL.disb.la", "AL.disb.ca", "AL.death", "PVFB",
                   #"PVFB.laca", "PVFB.LSC", "PVFB.v", "PVFB", 
-                  "B", "B.la", "B.ca", "B.v", "B.disb.la","B.disb.ca", 
+                  # "B", "B.la", "B.ca", "B.v", "B.disb.la","B.disb.ca", 
                   "PR", "NC_PR", "NC")
 
 

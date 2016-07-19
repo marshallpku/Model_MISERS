@@ -155,11 +155,11 @@ row.names(tier.param) <- tier.param$tier
 #                      ## Initial Amortization Basis  ####
 #*********************************************************************************************************
 
-init_amort_raw <- 0 # read_ExcelRange(file_planInfo, sheet = "Init_amort", colTypes="character")
+init_amort_raw <-  read_ExcelRange(file_planInfo, sheet = "Init_amort", colTypes="character")
   
-# init_amort_raw %<>% 
-#   mutate(year.est = year(year.est)) %>% 
-#   mutate_each(funs(as.numeric), -tier,  -type, -amort.method)
+init_amort_raw %<>%
+  mutate(year.est = year(year.est)) %>%
+  mutate_each(funs(as.numeric), -tier,  -type, -amort.method)
 
 # init_amort_raw #%>% str
 

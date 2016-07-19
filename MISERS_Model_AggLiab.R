@@ -90,7 +90,7 @@ get_AggLiab <- function( Tier_select_,
            PVFBx.av.tot    = PVFBx.laca.tot + PVFBx.v.tot + PVFBx.death.tot + PVFBx.disb.tot,
            
            PR.tot  = sx * number.a,
-           EEC.tot = EEC * number.a,
+           #EEC.tot = EEC * number.a,
            
            
            runname = runname)
@@ -117,7 +117,7 @@ get_AggLiab <- function( Tier_select_,
       PVFBx.av.sum   = sum(PVFBx.av.tot,   na.rm = TRUE),
       
       PR.sum    = sum(PR.tot,  na.rm = TRUE),
-      EEC.sum   = sum(EEC.tot, na.rm = TRUE),
+      #EEC.sum   = sum(EEC.tot, na.rm = TRUE),
       
       nactives  = sum(number.a,  na.rm = TRUE)) %>% 
       as.matrix # extracting elements from matrices is much faster than from data.frame

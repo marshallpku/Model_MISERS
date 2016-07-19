@@ -1,6 +1,4 @@
-# This script models the contingent annuitants (all retirees) in LAFPP 
-
-
+# This script models the contingent annuitants (all retirees) in MISERS 
 
 
 
@@ -27,8 +25,7 @@ get_contingentAnnuity <- function(Tier_select_,
   # apply_reduction: if FALSE, then no reduction factor will be applied to the initial benefit payment. 
   #                  That is, the intial benefit payment is the value determined by the benefit formula. 
   
-  
-  
+
   # Tier_select_ = "t5"
   # decrement.model_  = decrement.model
   # factor.ca = 0.8
@@ -42,7 +39,7 @@ get_contingentAnnuity <- function(Tier_select_,
   assign_parmsList(paramlist_,        envir = environment())
 
   # factor.ca <- tier.param[Tier_select_, "factor.ca"]
-  cola      <- tier.param[Tier_select_, "cola"]
+  # cola        <- tier.param[Tier_select_, "cola"]
   
   
   

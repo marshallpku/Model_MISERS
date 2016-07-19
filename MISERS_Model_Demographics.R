@@ -1,4 +1,4 @@
-# Simulation of the demograhics for a single tier in LAFPP
+# Simulation of the demograhics for a single tier in L
 
 ## Modifications on the original model
   # 1. Need to calculate the number of new retirees opting for contingent annuity(by ea, age) for each year. (Can be calculated after the loop) 
@@ -354,8 +354,6 @@ wf_disb.la <- data.frame(expand.grid(ea = range_ea, age = range_age, year = init
 # summarize term across termination year. Resulting data frame will join .Liab$active as part of the output. 
 term_reduced <- wf_term %>% group_by(year, age) %>% summarise(number.v = sum(number.v, na.rm = TRUE))
 
-
-wf_active
 
 #*************************************************************************************************************
 #                                     Number of new contingent annuitants   ####

@@ -11,9 +11,9 @@ run_sim <- function(Tier_select_,
                     Global_paramlist_ = Global_paramlist){
 
   # Run the section below when developing new features.
-      # Tier_select_ =  "sumTiers" #  Tier_select
+      # Tier_select_ =  "t1" #  Tier_select
       # i.r_ = i.r
-      # AggLiab_        = AggLiab.sumTiers
+      # AggLiab_        =  AggLiab # AggLiab.sumTiers
       # init_amort_raw_ = init_amort_raw
       # init_unrecReturns.unadj_ = init_unrecReturns.unadj
       # paramlist_      = paramlist
@@ -22,7 +22,7 @@ run_sim <- function(Tier_select_,
   assign_parmsList(Global_paramlist_, envir = environment())
   assign_parmsList(paramlist_,        envir = environment())
   
-  if(Tier_select_ != "sumTiers") init_amort_raw_ %<>% filter(tier == Tier_select_) 
+  # if(Tier_select_ != "sumTiers") init_amort_raw_ %<>% filter(tier == Tier_select_) 
 
   #*************************************************************************************************************
   #                                     Defining variables in simulation ####
@@ -186,7 +186,7 @@ run_sim <- function(Tier_select_,
   penSim0$PR <- AggLiab_$active[, "PR.sum"]
   
   # EEC(j) (LAFPP sepcific)
-  penSim0$EEC <- AggLiab_$active[, "EEC.sum"]
+  # penSim0$EEC <- AggLiab_$active[, "EEC.sum"]
   
   
   # nactives, nretirees, nterms
@@ -209,7 +209,7 @@ run_sim <- function(Tier_select_,
   #                                  Setting up initial amortization payments ####
   #*************************************************************************************************************  
   # matrix representation of amortization: better visualization but larger size
-  m.max <- max(init_amort_raw_$year.remaining)
+  m.max <- max(init_amort_raw_$year.remaining, m)
   SC_amort0 <- matrix(0, nyear + m.max, nyear + m.max)
   # SC_amort0
   # data frame representation of amortization: much smaller size, can be used in real model later.
@@ -223,7 +223,7 @@ run_sim <- function(Tier_select_,
     # Factor is defined as the initial model UAAL as a proportion of UAAL in AV2015.
     # CAUTION: the following formula only works when init_AA =  AL_pct, which is the case for LAFPP
   
-  factor.initAmort <- penSim0$AL[1]/ 18337507075
+  factor.initAmort <- 1 # penSim0$AL[1]/ 18337507075
   
   
   
@@ -243,8 +243,6 @@ run_sim <- function(Tier_select_,
   
   SC_amort0 <- rbind(SC_amort.init, SC_amort0)
   # The amortization basis of year j should be placed in row nrow.initAmort + j - 1. 
-  
-  
   
   
   
@@ -270,7 +268,7 @@ run_sim <- function(Tier_select_,
     
     for (j in 1:nyear){
       
-        #j <- 2
+      #j <- 13
 
 
       # MA(j) and EAA(j) 
@@ -310,11 +308,11 @@ run_sim <- function(Tier_select_,
         # Adjust AA for inital unrecognized returns
         #mm <- j - 1
         if((j - 1 + init.year) %in% init_unrecReturns.adj$year) penSim$AA[j] <- penSim$AA[j] + with(init_unrecReturns.adj, DeferredReturn[year == (j - 1 + init.year)])
-            
+
            # init_unrecReturns.adj[init_unrecReturns.adj$year - init.year + 1 == j, "DeferredReturn"] #  )
 
       }
-        
+
       
       ## Apply corridor for MA, MA must not deviate from AA by more than 40%. 
       
@@ -361,9 +359,9 @@ run_sim <- function(Tier_select_,
       #**************************************************************************************************************
       
       
-      # Employee contribution, based on payroll. May be adjusted later. 
-      # penSim$EEC[j] <- with(penSim, PR[j] * EEC_rate)
-      # penSim$EEC[j] <- with(penSim, EEC[j])
+      # Employee contribution, based on payroll.
+       penSim$EEC[j] <- with(penSim, PR[j] * EEC_rate)
+
       
       
       # ADC(j)

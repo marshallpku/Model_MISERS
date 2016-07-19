@@ -24,20 +24,6 @@
  # 2. Benefits foer vested terms are currently modeled as life annuity. Later we may want to model it as contingent annuity. 
 
 
-# Notes on LAFPP employer contribution rate 
- # Tier 1/2 
-  # 6% if yos <=30
-  # 0% if yos > 30
- # Tier 3/4
-  # 8% if yos <=30
-  # 0% if yos > 30
- # Tier 5
-  # 9% if yos <=33
-  # 0% if yos > 33
-  # City of LA pays 1% of the 9% if funded ratio >=100% (EEC rate 8%)
- # Tier 6 
-  # 11% if yos <=33
-  #  0% if yos > 33
 
 
 
@@ -63,7 +49,7 @@ get_indivLab <- function(Tier_select_,
   # benefit.disb_    = benefit.disb
   # bfactor_         = bfactor
   # init_terms_all_ = init_terms_all # get_tierData(init_terms_all, Tier_select)
-  # Tier_select_     = "t5"
+  # Tier_select_     = "t1"
   # mortality.post.model_ = mortality.post.model
   # liab.ca_         = liab.ca
   # liab.disb.ca_ = liab.disb.ca
@@ -75,14 +61,12 @@ assign_parmsList(Global_paramlist_, envir = environment()) # environment() retur
 assign_parmsList(paramlist_,        envir = environment())
 
 # Choosing tier specific parameters and data
-fasyears <- tier.param[Tier_select_, "fasyears"]
-r.vben   <- tier.param[Tier_select_, "r.vben"]
-r.yos    <- tier.param[Tier_select_, "r.yos"]
-r.age    <- tier.param[Tier_select_, "r.age"]
-v.yos    <- tier.param[Tier_select_, "v.yos"]
-cola     <- tier.param[Tier_select_, "cola"]
-EEC.rate <- tier.param[Tier_select_, "EEC.rate"]
-EEC.exempt.yos <- tier.param[Tier_select_, "EEC.exempt.yos"]
+# fasyears <- tier.param[Tier_select_, "fasyears"]
+# r.vben   <- tier.param[Tier_select_, "r.vben"]
+# r.yos    <- tier.param[Tier_select_, "r.yos"]
+# r.age    <- tier.param[Tier_select_, "r.age"]
+# v.yos    <- tier.param[Tier_select_, "v.yos"]
+# cola     <- tier.param[Tier_select_, "cola"]
 
 init_terminated_ <-  get_tierData(init_terms_all_, Tier_select_)
 
@@ -106,9 +90,9 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
   mutate(year = start.year + age - ea) %>%  # year index in the simulation)
   arrange(start.year, ea, age) %>% 
   left_join(salary_) %>%
-# left_join(.benefit) %>% # must make sure the smallest age in the retirement benefit table is smaller than the single retirement age. (smaller than r.min with multiple retirement ages)
+# left_join(.benefit) %>% 
   left_join(decrement.model_) %>% 
-  left_join(bfactor_) %>%
+  #left_join(bfactor_) %>%
   left_join(mortality.post.model_ %>% filter(age == age.r) %>% select(age, ax.r.W)) %>%
   left_join(liab.ca_ %>% filter(age == age.r) %>% select(age, liab.ca.sum.1)) %>% 
   left_join(liab.disb.ca_ %>% filter(age == age.disb) %>% select(age, liab.disb.ca.sum.1 = liab.ca.sum.1)) %>% 
@@ -125,8 +109,7 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
   mutate(
     yos= age - ea,
     
-    # EEC, LAFPP specific
-    EEC = ifelse(yos > EEC.exempt.yos, 0, sx * EEC.rate),
+    #EEC = ifelse(yos > EEC.exempt.yos, 0, sx * EEC.rate),
     
     # years of service
     Sx = ifelse(age == min(age), 0, lag(cumsum(sx))),  # Cumulative salary
@@ -135,12 +118,12 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
     fas= ifelse(yos < fasyears, Sx/n, (Sx - lag(Sx, fasyears))/n), # final average salary
     fas= ifelse(age == min(age), 0, fas),
     COLA.scale = (1 + cola)^(age - min(age)),     # later we can specify other kinds of COLA scale. Note that these are NOT COLA factors. They are used to derive COLA factors for different retirement ages.
-    Bx = na2zero(bfactor * fas),                  # accrued benefits, note that only Bx for ages above r.min are necessary under EAN.
+    Bx = na2zero(yos * bfactor * fas),            # accrued benefits, note that only Bx for ages above r.min are necessary under EAN.
     bx = lead(Bx) - Bx,                           # benefit accrual at age x
 
     # actuarial present value of future benefit, for $1's benefit in the initial year. 
     ax.deathBen = get_tla(pxm.deathBen, i, COLA.scale),    # Since retirees die at max.age for sure, the life annuity with COLA is equivalent to temporary annuity with COLA up to age max.age. 
-    ax.disb.la     = get_tla(pxm.d, i, COLA.scale),     
+    ax.disb.la  = get_tla(pxm.d, i, COLA.scale),     
     # ax.r = get_tla(pxm.r, i, COLA.scale),       # ax calculated with mortality table for retirees. 
     
     
@@ -173,7 +156,7 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
 
 # Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
 liab.active %<>%   
-  mutate( gx.laca = ifelse(yos >= r.yos & age >= r.age, 1, 0),
+  mutate( gx.laca = ifelse((age >= r.age1 & yos >= r.yos1 ) | (age >= r.age2 & yos >= r.yos2), 1, 0),
           # gx.laca = 0,
   Bx.laca  = gx.laca * Bx,  # This is the benefit level if the employee starts to CLAIM benefit at age x, not internally retire at age x. 
   TCx.la   = lead(Bx.laca) * qxr.la * lead(ax.r.W) * v,         # term cost of life annuity at the internal retirement age x (start to claim benefit at age x + 1)
@@ -340,8 +323,8 @@ liab.term.init <- expand.grid(ea         = unique(init_terminated_$ea),
   filter(start.year + age - ea >= 1,
          age >= ea,
          age.term >= ea) %>%
-  left_join(init_terminated_ %>% select(ea, age.term, start.year, yos, benefit.50)) %>%
-  left_join(select(liab.active, start.year, ea, age, bfactor, COLA.scale, pxRm, px_r.vben_m)) %>%
+  left_join(init_terminated_ %>% select(ea, age.term, start.year, yos, benefit)) %>%
+  left_join(select(liab.active, start.year, ea, age, COLA.scale, pxRm, px_r.vben_m)) %>%
   left_join(mortality.post.model_ %>% filter(age.r == r.vben) %>% select(age, ax.r.W.term = ax.r.W)) %>%
   group_by(start.year, ea, age.term) %>%
 
@@ -351,7 +334,7 @@ liab.term.init <- expand.grid(ea         = unique(init_terminated_$ea),
 
     year.term = year[age == age.term],
 
-    Bx.v  = benefit.50, #
+    Bx.v  = benefit, #
     B.v   = ifelse(age.ben > r.vben, 0,   ifelse(age >= r.vben, Bx.v[age == unique(age.term)] * COLA.scale/COLA.scale[age == r.vben], 0)),  # Benefit payment after r.vben, for age.ben == r.vben
     B.v   = ifelse(age.ben == r.vben, B.v, ifelse(age >= age.ben, Bx.v[age == unique(age.term)] * COLA.scale/COLA.scale[age == age.ben], 0)), # for age.ben > r.vben
     ALx.v = ifelse(age <  r.vben, Bx.v[age == unique(age.term)] * ax.r.W.term[age == r.vben] * px_r.vben_m * v^(r.vben - age), # liab before receiving benefits
@@ -430,14 +413,8 @@ pct.QSS
 # Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
 liab.active %<>%   
   mutate( gx.death  = 1,
-          Bx.death  = gx.death * switch(Tier_select_,
-                                        t1 = 0.5 * fas,
-                                        t2 = 0.55 * fas,
-                                        t3 = 0.75 * fas,
-                                        t4 = 0.75 * fas,
-                                        t5 = 0.75 * fas,
-                                        t6 = 0.8  * fas 
-                                        ), # This is the benefit level if the employee starts to CLAIM benefit at age x, not internally retire at age x. 
+          Bx.death  = gx.death * Bx,
+ 
           TCx.death = lead(Bx.death) * qxm.pre * pct.QSS  * lead(ax.deathBen) * v, # term cost of life annuity at the internal retirement age x (start to claim benefit at age x + 1)
 
           # TCx.r = Bx.r * qxr.a * ax,
@@ -524,9 +501,7 @@ liab.death %<>% as.data.frame  %>%
 # Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
 liab.active %<>%   
   mutate( gx.disb  = 1,
-          Bx.disb  = gx.disb * ifelse(yos < 20, 0.55 * fas,
-                               ifelse(yos > 30, 0.75 * fas, 
-                                                0.65 * fas)), 
+          Bx.disb  = gx.disb * Bx, 
           
           # This is the benefit level if the employee starts to CLAIM benefit at age x, not internally retire at age x. 
           TCx.disb.la = lead(Bx.disb) * qxd.la * lead(ax.disb.la) * v, # term cost of life annuity at the internal retirement age x (start to claim benefit at age x + 1)
@@ -651,7 +626,7 @@ var.names <- c("sx", ALx.laca.method, NCx.laca.method,
                      ALx.v.method, NCx.v.method, 
                      ALx.death.method, NCx.death.method,
                      ALx.disb.method, NCx.disb.method,
-                     "PVFBx.laca", "PVFBx.v", "PVFBx.death", "PVFBx.disb", "Bx.laca", "Bx.disb", "EEC")
+                     "PVFBx.laca", "PVFBx.v", "PVFBx.death", "PVFBx.disb", "Bx.laca", "Bx.disb")
 liab.active %<>% 
   filter(year %in% seq(init.year, len = nyear)) %>%
   select(year, ea, age, one_of(var.names)) %>%

@@ -420,11 +420,12 @@ fn_ret.ben <- function(sheet, fileName_){
   df_out <- bind_rows(df_fillin, df_grouped)
 } 
 
-init_retirees_all <- fn_ret.ben("RetBen_CRR2013", file_memberData)
+init_retirees_all <- fn_ret.ben("RetBen_t1_CRR2013", file_memberData)
 
 init_retirees_all %<>% 
   group_by(planname) %>% 
-  mutate(nretirees = nretirees * 57615 / sum(nretirees))
+  mutate(nretirees = nretirees * 57615 / sum(nretirees)) %>% 
+  ungroup
 
 
 
@@ -458,15 +459,17 @@ get_init.terms.temp <- function(file, sheet, planname, cellStart = "B2", cellEnd
 #   get_init.terms.temp(file_memberData, "Other_t1", "Terms_t1"),
 # )
 # 
-# init_terms_all
 
 
+init_terms_all <- data.frame(planname = "Terms_t1_fillin", age = 21:74, nterms = 0, benefit = 0)
+init_disb_all <- data.frame(planname = "Disb_t1_fillin", age = 21:80,  ndisb  = 0, benefit = 0)
+init_beneficiaries_all <- data.frame(planname = "Beneficiaries_t1_fillin", age = 51:90,  nbeneficiaries  = 0, benefit = 0)
 
 #*************************************************************************************************************
 #                           Post processing to make data usable to the model                       #####                  
 #*************************************************************************************************************
 
-# init_terms_all %<>% mutate(ea = 20) 
+init_terms_all %<>% mutate(ea = 20) 
 
 
 #*************************************************************************************************************
@@ -499,7 +502,7 @@ pct.female <-  1 - pct.male
 
 
 save(init_actives_all, init_retirees_all, 
-     # init_beneficiaries_all, init_disb_all, init_terms_all,
+     init_beneficiaries_all, init_disb_all, init_terms_all,
      prop.occupation, pct.male, pct.female,
      file = "Data_inputs/MISERS_MemberData.RData")
 
