@@ -159,6 +159,9 @@ for(runName in runList$runname ){
 
   paramlist$pct.ca.M <-  0.75 # proportion of males who opt for ca upon retirement
   paramlist$pct.ca.F <-  0.6
+  
+  # paramlist$pct.ca.M <-  0 # proportion of males who opt for ca upon retirement
+  # paramlist$pct.ca.F <-  0
     
   paramlist$factor.ca <- 1
 

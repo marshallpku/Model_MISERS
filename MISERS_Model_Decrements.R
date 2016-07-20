@@ -199,8 +199,8 @@ decrement.model %<>%
           pxT     = 1 - qxt - qxd - qxm.pre - qxr,                            
           
           pxRm        = order_by(-age, cumprod(ifelse(age >= r.max, 1, pxm.pre))), # prob of surviving up to r.max, mortality only
-          px_r.full_m = order_by(-age, cumprod(ifelse(age >= tier.param[Tier_select, "r.vben"], 1, pxm.pre))), # Should be deleted later
-          px_r.vben_m = order_by(-age, cumprod(ifelse(age >= tier.param[Tier_select, "r.vben"], 1, pxm.pre)))
+          px_r.full_m = order_by(-age, cumprod(ifelse(age >= r.vben, 1, pxm.pre))), # Should be deleted later
+          px_r.vben_m = order_by(-age, cumprod(ifelse(age >= r.vben, 1, pxm.pre)))
           
           # px65T = order_by(-age, cumprod(ifelse(age >= r.max, 1, pxT))), # prob of surviving up to r.max, composite rate
           # p65xm = cumprod(ifelse(age <= r.max, 1, lag(pxm))))            # prob of surviving to x from r.max, mortality only

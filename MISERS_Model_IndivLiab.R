@@ -278,7 +278,7 @@ liab.active %<>%
   mutate(gx.v = ifelse(yos >= v.yos, 1, 0),  # actives become vested after reaching v.yos years of yos
          
          Bx.v = ifelse(ea < r.vben, 
-                       gx.v * bfactor[age == r.vben] * fas, 0), # initial annuity amount when the vested term retires at age r.vben, when a employee is vested at a certain age.
+                       gx.v * bfactor * yos * fas, 0), # initial annuity amount when the vested term retires at age r.vben, when a employee is vested at a certain age.
 
          TCx.v   = ifelse(ea < r.vben, Bx.v * qxt * lead(px_r.vben_m) * v^(r.vben - age) * ax.r.W[age == r.vben], 0),             # term cost of vested termination benefits. We assume term rates are 0 after r.vben.
          PVFBx.v = ifelse(ea < r.vben, c(get_PVFB(pxT[age < r.vben], v, TCx.v[age < r.vben]), rep(0, max.age - r.vben + 1)), 0),  # To be compatible with the cases where workers enter after age r.min, r.max is used instead of r.min, which is used in textbook formula(winklevoss p115).
@@ -299,6 +299,7 @@ liab.active %<>%
   
 # x <- liab.active %>% filter(start.year == 1, ea == 20)
 
+liab.active %>% select(year, ea, age,yos,  ALx.EAN.CP.v, NCx.EAN.CP.v, TCx.v, PVFBx.v, Bx.v, gx.v, fas, px_r.vben_m) %>% filter(year == 2015) %>%  ungroup %>% arrange(year, ea, age, yos)
 
 
 #*************************************************************************************************************
