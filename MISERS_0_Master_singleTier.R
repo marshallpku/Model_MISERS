@@ -14,7 +14,7 @@ gc()
 #*********************************************************************************************************
 
 # Plan information
-# source("LAFPP_Data_RP2000.R")
+# source("MISERS_Data_RP2000.R")
  source("MISERS_Data_PlanInfo.R")
  source("MISERS_Data_ImportMemberData.R")
 
@@ -23,7 +23,7 @@ load("Data_inputs/MISERS_MemberData.RData")  # for all tiers
 
 # salgrowth %<>% mutate(salgrowth = salgrowth * 1.1)
 
-pct.init.ret.la <-  0.3
+pct.init.ret.la <-  1
 pct.init.disb.la <-  0.3
 
 pct.init.disb.ca  <- 1 - pct.init.disb.la

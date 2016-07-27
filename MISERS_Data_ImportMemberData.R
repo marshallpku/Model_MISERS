@@ -403,6 +403,10 @@ init_actives_all
 # There is no breakdown of initial retirees by age in the AV. For now, the total number of retirees are evenly spread
 # over age 41 - 80.
 
+load("Data_inputs/LAFPP_dist_init.nonActives.RData")
+plot(dist_init.disb$dist.ben.disb.la)
+plot(dist_init.retirees$dist.ben.la)
+
 fn_ret.ben <- function(sheet, fileName_){
   
 
@@ -422,11 +426,26 @@ fn_ret.ben <- function(sheet, fileName_){
 
 init_retirees_all <- fn_ret.ben("RetBen_t1_CRR2013", file_memberData)
 
-init_retirees_all %<>% 
-  group_by(planname) %>% 
-  mutate(nretirees = nretirees * 57615 / sum(nretirees)) %>% 
+# init_retirees_all %<>%
+#   group_by(planname) %>%
+#   mutate(nretirees = nretirees * 57615 / sum(nretirees),
+#          benefit   = benefit * 1222881091 / sum(nretirees * benefit)
+#          ) %>%
+#   ungroup
+
+
+init_retirees_all %<>%
+  group_by(planname) %>%
+  left_join(dist_init.disb) %>%
+  mutate(nretirees = nretirees * 57615 / sum(nretirees),
+         # benefit   = benefit * 1222881091 / sum(nretirees * benefit)
+         benefit = dist.ben.disb.la/sum(dist.ben.disb.la * nretirees) * 1222881091
+  ) %>%
   ungroup
 
+
+# init_retirees_all %>% filter(planname == "RetBen_t1_CRR2013_fillin") %>% summarize(sum(nretirees * benefit))
+init_retirees_all
 
 
 #*************************************************************************************************************

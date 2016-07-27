@@ -115,7 +115,7 @@ for(runName in runList$runname ){
   
   paramlist$Grouping    <- "fillin"
     
-  paramlist$r.min  <- 45 # this is not required age of retirement benefit. 
+  paramlist$r.min  <- 25 # this is not required age of retirement benefit. 
   paramlist$r.max  <- 75 
     
     #fasyears <- 3,
