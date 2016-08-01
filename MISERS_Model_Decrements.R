@@ -73,7 +73,8 @@ mortality.post.model <- expand.grid(age = range_age,
     qxm.post.W = qxm.post.male * w.male + qxm.post.female * w.female, # dynamically weighted mortality
     pxm.post.W = 1 - qxm.post.W,
     
-    COLA.scale = (1 + cola)^(row_number() - 1 ),
+    COLA.scale = ifelse(cola.compound, (1 + cola)^(row_number() - 1), 1 + cola * (row_number() - 1)),
+    
     B =  COLA.scale,
     ax.r.W     =  get_tla(pxm.post.W, i, COLA.scale),
     liab.la.W = B * ax.r.W    # "la" for life annuity. liability for $1's benefit payment at retirement. 

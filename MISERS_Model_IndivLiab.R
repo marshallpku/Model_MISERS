@@ -117,8 +117,13 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
     n  = pmin(yos, fasyears),                          # years used to compute fas
     fas= ifelse(yos < fasyears, Sx/n, (Sx - lag(Sx, fasyears))/n), # final average salary
     fas= ifelse(age == min(age), 0, fas),
-    COLA.scale = (1 + cola)^(age - min(age)),     # later we can specify other kinds of COLA scale. Note that these are NOT COLA factors. They are used to derive COLA factors for different retirement ages.
-    #COLA.scale = 1, #+ (cola)*(age - min(age)),  
+    
+
+    COLA.scale = ifelse(cola.compound, (1 + cola)^(age - min(age)), 1 + cola * (age - min(age))),     # later we can specify other kinds of COLA scale. Note that these are NOT COLA factors. They are used to derive COLA factors for different retirement ages.
+    # COLA.scale = 1, # + (cola)*(age - min(age)),  
+    # COLA.scale =    1 + (cola)*(age - min(age)),  # uncompound COLA
+    
+    
     Bx = na2zero(yos * bfactor * fas),            # accrued benefits, note that only Bx for ages above r.min are necessary under EAN.
     bx = lead(Bx) - Bx,                           # benefit accrual at age x
 
@@ -628,7 +633,7 @@ var.names <- c("sx", ALx.laca.method, NCx.laca.method,
                      ALx.v.method, NCx.v.method, 
                      ALx.death.method, NCx.death.method,
                      ALx.disb.method, NCx.disb.method,
-                     "PVFBx.laca", "PVFBx.v", "PVFBx.death", "PVFBx.disb", "Bx.laca", "Bx.disb")
+                     "PVFBx.laca", "PVFBx.v", "PVFBx.death", "PVFBx.disb", "Bx.laca", "Bx.disb", "COLA.scale")
 liab.active %<>% 
   filter(year %in% seq(init.year, len = nyear)) %>%
   select(year, ea, age, one_of(var.names)) %>%

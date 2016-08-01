@@ -404,8 +404,8 @@ init_actives_all
 # over age 41 - 80.
 
 load("Data_inputs/LAFPP_dist_init.nonActives.RData")
-plot(dist_init.disb$dist.ben.disb.la)
-plot(dist_init.retirees$dist.ben.la)
+#plot(dist_init.disb$dist.ben.disb.la)
+#plot(dist_init.retirees$dist.ben.la)
 
 fn_ret.ben <- function(sheet, fileName_){
   
