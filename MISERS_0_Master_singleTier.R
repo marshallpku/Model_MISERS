@@ -179,8 +179,8 @@ penSim_results <- run_sim(Tier_select, AggLiab)
 
 
 var_display1 <- c("Tier", "sim", "year", "FR", "MA", "AL", 
-                  "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term",
-                  #"AL.la", "AL.ca", "AL.disb.la", "AL.disb.ca", "AL.death", "PVFB",
+                  "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB",
+                  # "AL.disb.la", "AL.disb.ca", "AL.death", "PVFB",
                   #"PVFB.laca", "PVFB.LSC", "PVFB.v", "PVFB", 
                   # "B", "B.la", "B.ca", "B.v", "B.disb.la","B.disb.ca", 
                   "PR", "NC_PR", "NC","ERC")
@@ -189,6 +189,8 @@ var_display1 <- c("Tier", "sim", "year", "FR", "MA", "AL",
 var_display2 <- c("Tier", "sim", "year", "FR", "MA", "AL", "EEC","ERC","ERC_PR","B", "B.v", 
                   "nactives", "nretirees", "nla", "n.ca.R1", "n.ca.R0S1", "nterms", 
                   "ndisb.la", "ndisb.ca.R1", "ndisb.ca.R0S1" )
+
+
 
 
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display1)) %>% print

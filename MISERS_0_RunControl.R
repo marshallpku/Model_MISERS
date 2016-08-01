@@ -27,7 +27,7 @@ library("btools")
 source("Functions.R")
 
 
-# Road map for model files (all with suffix "LAFPP_" and extension ".R")
+# Road map for model files (all with suffix "MISERS_" and extension ".R")
  
  # Master files:
    # Master_singleTier
@@ -46,6 +46,8 @@ source("Functions.R")
  # Model_AggLiab
  # Model_Sim
 
+
+# NOTES for MISERS
 
 # Notes on disability benefits
   # qxd is the sum of qxd.nonduty and qxd.duty
@@ -113,6 +115,8 @@ for(runName in runList$runname ){
   if(paramlist$nyear.override != 0) Global_paramlist$nyear <- paramlist$nyear.override
   
   
+  paramlist$cola <- 0.015
+  
   paramlist$Grouping    <- "fillin"
     
   paramlist$r.min  <- 25 # this is not required age of retirement benefit. 
@@ -149,7 +153,7 @@ for(runName in runList$runname ){
   
   paramlist$bfactor <- 0.015
   
-  paramlist$cola <- 0.03
+  #paramlist$cola <- 0.015
     
   paramlist$startingSal_growth <- 0.04
     
