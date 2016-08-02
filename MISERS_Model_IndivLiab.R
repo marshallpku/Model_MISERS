@@ -118,7 +118,7 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
     fas= ifelse(yos < fasyears, Sx/n, (Sx - lag(Sx, fasyears))/n), # final average salary
     fas= ifelse(age == min(age), 0, fas),
     
-
+    cola.compound = cola.compound,
     COLA.scale = ifelse(cola.compound, (1 + cola)^(age - min(age)), 1 + cola * (age - min(age))),     # later we can specify other kinds of COLA scale. Note that these are NOT COLA factors. They are used to derive COLA factors for different retirement ages.
     # COLA.scale = 1, # + (cola)*(age - min(age)),  
     # COLA.scale =    1 + (cola)*(age - min(age)),  # uncompound COLA
@@ -145,6 +145,9 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
     ayx = c(get_tla2(pxT[age <= r.max], i), rep(0, max.age - r.max)),                     # need to make up the length of the vector up to age max.age
     ayxs= c(get_tla2(pxT[age <= r.max], i,  sx[age <= r.max]), rep(0, max.age - r.max))   # need to make up the length of the vector up to age max.age
   )
+
+
+liab.active %>% select(start.year, ea, COLA.scale)
 
 
 # liab.active %>% select(start.year, ea, age, year, fas, b)
