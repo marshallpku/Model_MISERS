@@ -230,9 +230,8 @@ PV.annuity %<>%
     APV.BwCOLA = get_rollingAPV(BwCOLA, pxm.post.W, i)  # rolling actuarial PV from the year of retirement
     ) 
 
-PV.annuity %>% head
 
-PV.annuity %>% filter(start.year == 1990, age.r == 60, ea == 34)
+# PV.annuity %>% filter(start.year == 1990, age.r == 60, ea == 34)
 
 
 

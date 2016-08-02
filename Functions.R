@@ -230,13 +230,14 @@ get_rollingAPV <- function(p.vec, pxm, i){
   for (j in 1:N){
     #j = 1
     #j = 2
-    pv[j] <- sum(p.vec[j:N]  * v ^ (0:(N - j)) * ifelse(j == N, 1, c(1, pxm[j:(N-1)])))
+    pv[j] <- ifelse(j == N, p.vec[j], 
+                            sum(p.vec[j:N]  * v ^ (0:(N - j)) * cumprod(c(1, pxm[j:(N-1)]))))
   }
   
   pv
 }
-# y <- get_rollingAPV(1:30, rep(0.98, 30), i)
-# y
+#  y <- get_rollingAPV(1:30, rep(0.98, 30), i)
+#  y
 
 
 
