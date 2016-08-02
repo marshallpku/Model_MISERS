@@ -266,6 +266,22 @@ liab.la %<>% as.data.frame  %>% # filter(start.year == -41, ea == 21, age.retire
 
 
 
+## Debug
+
+load("l.flexCOLA.RData")
+l.flexCOLA[[1]] 
+
+# Compare retirement benefit payments and ALs
+ # Flexible COLA, PV.annuity
+ l.flexCOLA[[1]] %>% filter(start.year == 1990, age.r == 60, ea == 34) 
+ 
+ # Old COLA, liab.la
+ liab.la %>% filter(start.year == 1990, age.r == 60, ea = 34)
+
+
+
+
+
 
 
 #*************************************************************************************************************

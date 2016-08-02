@@ -21,3 +21,5 @@ vignettes/*.pdf
 
 
 Results*/**/*.RData
+
+l.flexCOLA.RData
