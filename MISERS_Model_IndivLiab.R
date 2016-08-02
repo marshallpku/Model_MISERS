@@ -120,9 +120,7 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
     
 
     COLA.scale = ifelse(cola.compound, (1 + cola)^(age - min(age)), 1 + cola * (age - min(age))),     # later we can specify other kinds of COLA scale. Note that these are NOT COLA factors. They are used to derive COLA factors for different retirement ages.
-    # COLA.scale = 1, # + (cola)*(age - min(age)),  
-    # COLA.scale =    1 + (cola)*(age - min(age)),  # uncompound COLA
-    
+ 
     
     Bx = na2zero(yos * bfactor * fas),            # accrued benefits, note that only Bx for ages above r.min are necessary under EAN.
     bx = lead(Bx) - Bx,                           # benefit accrual at age x
@@ -159,6 +157,153 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
 #*************************************************************************************************************
 #                        2.1  ALs and NCs of life annuity and contingent annuity for actives             #####                  
 #*************************************************************************************************************
+
+# Present value of future benefit given starting benefit
+ # Group by start.year, ea, age.r 
+ # for retirees who retire in or after year 1, starting benefit is given by Bx
+ # for retirees who retire before year 1 (initial retirees), starting benefit is given by "benefit"
+ # for each "start.year-ea-age.r" group,
+    # 1. starting benefit is Bx/benefit with age = age.r,
+    # 2. calculate future benefit (benefit for age >= age.r) according to COLA rules. 
+    # 3. calculate actuarial present value for each age >= age.r.  
+
+PV.annuity <- rbind(
+  # grids for initial retirees in year 1
+  # To simplified the calculation, it is assmed that all initial retirees entered the workforce at age r.min - 1 and 
+  # retire right in year 1. This assumption will cause the retirement age and yos of some of the retirees not compatible with the eligiblility rules,
+  # but this is not an issue since the main goal is to generate the correct cashflow and liablity for the initial retirees/beneficiaries.
+  
+  # expand.grid(ea         = r.min - 1,
+  #             age.r      = benefit_$age, # This ensures that year of retirement is year 1.
+  #             start.year = init.year - (benefit_$age - (r.min - 1)),
+  #             age        = range_age[range_age >= r.min]) %>%
+  #   filter(age >= ea + 1 - start.year),
+  
+   expand.grid(
+              #ea        = r.min - 1,
+              age.r      = benefit_$age, # This ensures that year of retirement is year 1.
+              #start.year = init.year - (benefit_$age - (r.min - 1)),
+              age        = range_age[range_age >= r.min]) %>%
+   mutate(ea = r.min - 1,
+            start.year = init.year - (age.r - ea)) %>% 
+   filter(# age >= ea + 1 - start.year,
+          age >= age.r),
+  
+  # grids for who retire after year 1.
+  expand.grid(ea         = range_ea[range_ea < r.max],
+              age.r      = r.min:r.max,
+              start.year = (init.year + 1 - (r.max - min(range_ea))):(init.year + nyear - 1),
+              age        = range_age[range_age >=r.min]) %>%
+    filter(age   >= ea,
+           age.r >= ea,
+           age   >= age.r,
+           start.year + (age.r - ea) >= init.year + 1, # retire after year 2, LHS is the year of retirement
+           start.year + age - ea     >= init.year + 1) # not really necessary since we already have age >= age.r
+) %>%
+  data.table(key = "start.year,ea,age.r,age")
+
+PV.annuity <- PV.annuity[!duplicated(PV.annuity %>% select(start.year, ea, age, age.r))]
+
+# PV.annuity %>% arrange(start.year, age.r, ea)
+
+PV.annuity <-  
+  merge(PV.annuity,
+        select(liab.active, start.year, ea, age, Bx) %>% data.table(key = "ea,age,start.year"),
+        all.x = TRUE, 
+        by = c("ea", "age","start.year")) %>%
+  arrange(start.year, ea, age.r) %>% 
+  as.data.frame %>% 
+  left_join(select(mortality.post.model_, age, age.r, pxm.post.W)) %>%  #  load present value of annuity for all retirement ages, ax.r.W in liab.active cannot be used anymore. 
+  left_join(benefit_) 
+
+
+#PV.annuity %>% filter(age == age.r) %>% head(20)
+#PV.annuity %>% filter(start.year == 2000, age.r == 50, ea == 30) %>% head
+
+x <- 
+PV.annuity %>% 
+  group_by(start.year, age.r, ea) %>% 
+  mutate(
+    year.r = start.year + age.r - ea, # year of retirement
+    Bx = ifelse(year.r > init.year, Bx, benefit),
+    B  = get_BwCOLA(Bx[age == age.r], min(age):max(age), cola, F, 300),
+    ax.r.W = get_rollingAPV(B, pxm.post.W, i)
+    ) 
+x %>% head
+
+
+
+
+get_BwCOLA <- function(init.B, age_range, cola_rate, compound, annual_max = NULL){
+  # init.B = 20000
+  # age_range = 40:120
+  # cola_rate = 0.03
+  # compound = T
+  # annual_max = 300
+
+  df_B <- data.frame(age = age_range, B = 0)
+
+  
+  if(is.null(annual_max)){
+    df_B %<>% 
+      mutate(
+      compound = compound, 
+      B = ifelse(compound, init.B * (1 + cola_rate)^(row_number() - 1 ),
+                           init.B * (1 + cola_rate * (row_number() - 1)))) 
+  }
+  
+  if(!is.null(annual_max)){
+    if(!compound){
+    # Uncompound COLA
+      if(init.B * cola_rate > annual_max){
+        df_B %<>% mutate(B = init.B + (row_number() - 1) * annual_max) 
+      } else {
+        df_B %<>% mutate(B = init.B * (1 + cola_rate * (row_number() - 1))) 
+      }
+      
+    } else {
+    # Compound COLA
+      df_B %<>% mutate(B = init.B * (1 + cola_rate)^(row_number() - 1 ),
+                       inc = ifelse(age == min(age), 0, B - lag(B)))
+      
+      age.cut <- df_B$age[which(df_B$inc < annual_max)] %>% max
+      
+      df_B %<>% mutate(B = ifelse(age <= age.cut, B, 
+                                  B[age == age.cut] + annual_max * (age - age.cut)))
+
+    }
+  }     
+    
+  df_B$B
+}
+
+get_rollingAPV <- function(p.vec, pxm, i){
+  # Rolling actuarial present value of a stream of cash flow
+  
+  # p.vec <- 1:30
+  # pxm <- rep(0.98, 30)
+  # i = 0.075  
+  
+  v <- 1/(1 + i)
+  N <- length(p.vec)
+  pv <- numeric(N)
+  
+  for (j in 1:N){
+    #j = 1
+    #j = 2
+    pv[j] <- sum(p.vec[j:N]  * v ^ (0:(N - j)) * ifelse(j == N, 1, c(1, pxm[j:(N-1)])))
+  }
+  
+  pv
+}
+
+
+
+
+x <- get_BwCOLA(20000, 40:120, 0.03, F)
+x
+y <- get_rollingAPV(1:30, rep(0.98, 30), i)
+y
 
 # Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
 liab.active %<>%   
