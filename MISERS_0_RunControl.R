@@ -116,7 +116,7 @@ for(runName in runList$runname ){
   
   
   paramlist$cola.compound <- FALSE
-  paramlist$cola <- 0.015
+  paramlist$cola <- 0.03
   
   paramlist$Grouping    <- "fillin"
     
@@ -162,11 +162,11 @@ for(runName in runList$runname ){
     
   paramlist$newEnt_byTier <- c(t1 = 0, t2 = 1)
 
-  paramlist$pct.ca.M <-  0.75 # proportion of males who opt for ca upon retirement
-  paramlist$pct.ca.F <-  0.6
+  # paramlist$pct.ca.M <-  0.75 # proportion of males who opt for ca upon retirement
+  # paramlist$pct.ca.F <-  0.6
   
-  # paramlist$pct.ca.M <-  0 # proportion of males who opt for ca upon retirement
-  # paramlist$pct.ca.F <-  0
+  paramlist$pct.ca.M <-  0 # proportion of males who opt for ca upon retirement
+  paramlist$pct.ca.F <-  0
     
   paramlist$factor.ca <- 1
 

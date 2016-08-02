@@ -163,6 +163,85 @@ get_AL.PUC <- function(px, v, TC){
 # )
 
 
+
+# 1.6 Benefit with cola
+get_BwCOLA <- function(init.B, age_range, cola_rate, compound, annual_max = NULL){
+  # Given initial benefit payment and cola, this function calculate benefit payments in future years. 
+  # COLA can be either compound or uncompound.
+  # A limit on annual benefit increase is allowed. (annual_max)
+  
+  # init.B = 20000
+  # age_range = 40:120
+  # cola_rate = 0.03
+  # compound = T
+  # annual_max = 300
+  
+  df_B <- data.frame(age = age_range, B = 0)
+  
+  
+  if(is.null(annual_max)){
+    df_B %<>% 
+      mutate(
+        compound = compound, 
+        B = ifelse(compound, init.B * (1 + cola_rate)^(row_number() - 1 ),
+                   init.B * (1 + cola_rate * (row_number() - 1)))) 
+  }
+  
+  if(!is.null(annual_max)){
+    if(!compound){
+      # Uncompound COLA
+      if(init.B * cola_rate > annual_max){
+        df_B %<>% mutate(B = init.B + (row_number() - 1) * annual_max) 
+      } else {
+        df_B %<>% mutate(B = init.B * (1 + cola_rate * (row_number() - 1))) 
+      }
+      
+    } else {
+      # Compound COLA
+      df_B %<>% mutate(B = init.B * (1 + cola_rate)^(row_number() - 1 ),
+                       inc = ifelse(age == min(age), 0, B - lag(B)))
+      
+      age.cut <- df_B$age[which(df_B$inc < annual_max)] %>% max
+      
+      df_B %<>% mutate(B = ifelse(age <= age.cut, B, 
+                                  B[age == age.cut] + annual_max * (age - age.cut)))
+      
+    }
+  }     
+  
+  df_B$B
+}
+# x <- get_BwCOLA(20000, 40:120, 0.03, F)
+# x
+
+
+# 1.7 Rolling actuaial PV for a cash flow
+get_rollingAPV <- function(p.vec, pxm, i){
+  # Rolling actuarial present value of a stream of cash flow
+  
+  # p.vec <- 1:30
+  # pxm <- rep(0.98, 30)
+  # i = 0.075  
+  
+  v <- 1/(1 + i)
+  N <- length(p.vec)
+  pv <- numeric(N)
+  
+  for (j in 1:N){
+    #j = 1
+    #j = 2
+    pv[j] <- sum(p.vec[j:N]  * v ^ (0:(N - j)) * ifelse(j == N, 1, c(1, pxm[j:(N-1)])))
+  }
+  
+  pv
+}
+# y <- get_rollingAPV(1:30, rep(0.98, 30), i)
+# y
+
+
+
+
+
 #**************************************
 # 2. Amortization Functions       #####
 #**************************************

@@ -23,8 +23,8 @@ load("Data_inputs/MISERS_MemberData.RData")  # for all tiers
 
 # salgrowth %<>% mutate(salgrowth = salgrowth * 1.1)
 
-pct.init.ret.la <-  0.5
-pct.init.disb.la <-  0.3
+pct.init.ret.la <-  1
+pct.init.disb.la <-  1
 
 pct.init.disb.ca  <- 1 - pct.init.disb.la
 pct.init.ret.ca  <- 1 - pct.init.ret.la

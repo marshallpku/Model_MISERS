@@ -220,101 +220,37 @@ PV.annuity <-
 #PV.annuity %>% filter(age == age.r) %>% head(20)
 #PV.annuity %>% filter(start.year == 2000, age.r == 50, ea == 30) %>% head
 
-x <- 
-PV.annuity %>% 
+
+PV.annuity %<>% 
   group_by(start.year, age.r, ea) %>% 
   mutate(
     year.r = start.year + age.r - ea, # year of retirement
-    Bx = ifelse(year.r > init.year, Bx, benefit),
-    B  = get_BwCOLA(Bx[age == age.r], min(age):max(age), cola, F, 300),
-    ax.r.W = get_rollingAPV(B, pxm.post.W, i)
+    Bx     = ifelse(year.r > init.year, Bx, benefit),
+    BwCOLA     = get_BwCOLA(Bx[age == age.r], min(age):max(age), cola, T),
+    APV.BwCOLA = get_rollingAPV(BwCOLA, pxm.post.W, i)  # rolling actuarial PV from the year of retirement
     ) 
-x %>% head
+
+PV.annuity %>% head
+
+# PV.annuity %>% filter(start.year == 2015, age.r == 50, ea == 47)
 
 
-
-
-get_BwCOLA <- function(init.B, age_range, cola_rate, compound, annual_max = NULL){
-  # init.B = 20000
-  # age_range = 40:120
-  # cola_rate = 0.03
-  # compound = T
-  # annual_max = 300
-
-  df_B <- data.frame(age = age_range, B = 0)
-
-  
-  if(is.null(annual_max)){
-    df_B %<>% 
-      mutate(
-      compound = compound, 
-      B = ifelse(compound, init.B * (1 + cola_rate)^(row_number() - 1 ),
-                           init.B * (1 + cola_rate * (row_number() - 1)))) 
-  }
-  
-  if(!is.null(annual_max)){
-    if(!compound){
-    # Uncompound COLA
-      if(init.B * cola_rate > annual_max){
-        df_B %<>% mutate(B = init.B + (row_number() - 1) * annual_max) 
-      } else {
-        df_B %<>% mutate(B = init.B * (1 + cola_rate * (row_number() - 1))) 
-      }
-      
-    } else {
-    # Compound COLA
-      df_B %<>% mutate(B = init.B * (1 + cola_rate)^(row_number() - 1 ),
-                       inc = ifelse(age == min(age), 0, B - lag(B)))
-      
-      age.cut <- df_B$age[which(df_B$inc < annual_max)] %>% max
-      
-      df_B %<>% mutate(B = ifelse(age <= age.cut, B, 
-                                  B[age == age.cut] + annual_max * (age - age.cut)))
-
-    }
-  }     
-    
-  df_B$B
-}
-
-get_rollingAPV <- function(p.vec, pxm, i){
-  # Rolling actuarial present value of a stream of cash flow
-  
-  # p.vec <- 1:30
-  # pxm <- rep(0.98, 30)
-  # i = 0.075  
-  
-  v <- 1/(1 + i)
-  N <- length(p.vec)
-  pv <- numeric(N)
-  
-  for (j in 1:N){
-    #j = 1
-    #j = 2
-    pv[j] <- sum(p.vec[j:N]  * v ^ (0:(N - j)) * ifelse(j == N, 1, c(1, pxm[j:(N-1)])))
-  }
-  
-  pv
-}
-
-
-
-
-x <- get_BwCOLA(20000, 40:120, 0.03, F)
-x
-y <- get_rollingAPV(1:30, rep(0.98, 30), i)
-y
 
 # Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
-liab.active %<>%   
+# liab.active1 <- 
+liab.active %<>% 
+  left_join(PV.annuity %>% ungroup %>%  filter(age == age.r) %>% select(-age.r, -Bx, -benefit, -year.r)) %>% 
   mutate( gx.laca = ifelse((age >= r.age1 & yos >= r.yos1 ) | (age >= r.age2 & yos >= r.yos2), 1, 0),
-          # gx.laca = 0,
+          #gx.laca = 0,
   Bx.laca  = gx.laca * Bx,  # This is the benefit level if the employee starts to CLAIM benefit at age x, not internally retire at age x. 
-  TCx.la   = lead(Bx.laca) * qxr.la * lead(ax.r.W) * v,         # term cost of life annuity at the internal retirement age x (start to claim benefit at age x + 1)
-  TCx.ca   = lead(Bx.laca) * qxr.ca * lead(liab.ca.sum.1) * v,  # term cost of contingent annuity at the internal retirement age x (start to claim benefit at age x + 1)
-  TCx.laca = TCx.la + TCx.ca,
+  # TCx.la   = lead(Bx.laca) * qxr.la * lead(ax.r.W) * v,         # term cost of life annuity at the internal retirement age x (start to claim benefit at age x + 1)
+  # TCx.ca   = lead(Bx.laca) * qxr.ca * lead(liab.ca.sum.1) * v,  # term cost of contingent annuity at the internal retirement age x (start to claim benefit at age x + 1)
+  # TCx.laca = TCx.la + TCx.ca,
   
-  # TCx.r = Bx.r * qxr.a * ax,
+  APV.BwCOLA = gx.laca * APV.BwCOLA, # set PV of benefit for 0 for ineligible age/yos.
+  TCx.la     = lead(APV.BwCOLA) * qxr.la * v,
+  TCx.laca   = TCx.la,
+  
   PVFBx.laca  = c(get_PVFB(pxT[age <= r.max], v, TCx.laca[age <= r.max]), rep(0, max.age - r.max)),
   
   ## NC and AL of UC
@@ -342,7 +278,6 @@ liab.active %<>%
 #*************************************************************************************************************
 #                       2.2   ALs and benefits for retirees with life annuity                        #####                  
 #*************************************************************************************************************
-
 
 
 # Calculate AL and benefit payment for retirees having retired at different ages.
@@ -375,12 +310,12 @@ liab.la <- liab.la[!duplicated(liab.la %>% select(start.year, ea, age, age.r ))]
  
  
 liab.la <- merge(liab.la,
-                 select(liab.active, start.year, ea, age, Bx.laca, COLA.scale, gx.laca) %>% data.table(key = "ea,age,start.year"),
+                 select(liab.active, start.year, ea, age, gx.laca) %>% data.table(key = "ea,age,start.year"),
                  all.x = TRUE, 
                  by = c("ea", "age","start.year")) %>%
            arrange(start.year, ea, age.r) %>% 
            as.data.frame %>% 
-           left_join(select(mortality.post.model_, age, age.r, ax.r.W.ret = ax.r.W)) %>%  #  load present value of annuity for all retirement ages, ax.r.W in liab.active cannot be used anymore. 
+           left_join(select(PV.annuity, start.year, ea, age, age.r, BwCOLA, APV.BwCOLA) ) %>%  #  load present value of annuity for all retirement ages, ax.r.W in liab.active cannot be used anymore. 
            left_join(benefit_)
 
 
@@ -390,12 +325,15 @@ liab.la %<>% as.data.frame  %>% # filter(start.year == -41, ea == 21, age.retire
   mutate(
     year   = start.year + age - ea,
     year.r = start.year + age.r - ea, # year of retirement
-    Bx.laca  = ifelse(is.na(Bx.laca), 0, Bx.laca),  # just for safety
-    B.la   = ifelse(year.r <= init.year,
-                    benefit[year == init.year] * COLA.scale / COLA.scale[year == init.year],      # Benefits for initial retirees
-                    Bx.laca[age == age.r] * COLA.scale / COLA.scale[age == age.r]),               # Benefits for retirees after year 1
-    ALx.la = B.la * ax.r.W.ret                                                                    # Liability for remaining retirement benefits, PV of all future benefit adjusted with COLA
-
+    #Bx.laca  = ifelse(is.na(Bx.laca), 0, Bx.laca),  # just for safety
+    B.la = na2zero(BwCOLA),        # annual benefit (life annuity) 
+    ALx.la = na2zero(APV.BwCOLA)   # liability for remaining retirement benefit
+    
+    # B.la   = ifelse(year.r <= init.year,
+    #                 benefit[year == init.year] * COLA.scale / COLA.scale[year == init.year],      # Benefits for initial retirees
+    #                 Bx.laca[age == age.r] * COLA.scale / COLA.scale[age == age.r]),               # Benefits for retirees after year 1
+    # ALx.la = B.la * ax.r.W.ret                                                                    # Liability for remaining retirement benefits, PV of all future benefit adjusted with COLA
+  
   ) %>% ungroup %>%
   # select(start.year, year, ea, age, year.retire, age.retire,  B.r, ALx.r)# , ax, Bx, COLA.scale, gx.r)
   filter(year %in% seq(init.year, len = nyear) ) %>%
@@ -405,9 +343,6 @@ liab.la %<>% as.data.frame  %>% # filter(start.year == -41, ea == 21, age.retire
 
 # Spot check
 # liab.la %>% filter(start.year == 2016, ea == 20, age.r == 51) %>% as.data.frame()
-
-
-
 
 
 #*************************************************************************************************************
@@ -450,7 +385,6 @@ liab.active %<>%
   
 # x <- liab.active %>% filter(start.year == 1, ea == 20)
 
-liab.active %>% select(year, ea, age,yos,  ALx.EAN.CP.v, NCx.EAN.CP.v, TCx.v, PVFBx.v, Bx.v, gx.v, fas, px_r.vben_m) %>% filter(year == 2015) %>%  ungroup %>% arrange(year, ea, age, yos)
 
 
 #*************************************************************************************************************
@@ -778,7 +712,9 @@ var.names <- c("sx", ALx.laca.method, NCx.laca.method,
                      ALx.v.method, NCx.v.method, 
                      ALx.death.method, NCx.death.method,
                      ALx.disb.method, NCx.disb.method,
-                     "PVFBx.laca", "PVFBx.v", "PVFBx.death", "PVFBx.disb", "Bx.laca", "Bx.disb", "COLA.scale")
+                     "PVFBx.laca", "PVFBx.v", "PVFBx.death", "PVFBx.disb", 
+                     "Bx.laca", 
+                     "Bx.disb", "COLA.scale")
 liab.active %<>% 
   filter(year %in% seq(init.year, len = nyear)) %>%
   select(year, ea, age, one_of(var.names)) %>%
