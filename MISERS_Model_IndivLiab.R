@@ -118,7 +118,7 @@ liab.active <- expand.grid(start.year = min.year:(init.year + nyear - 1) ,
     fas= ifelse(yos < fasyears, Sx/n, (Sx - lag(Sx, fasyears))/n), # final average salary
     fas= ifelse(age == min(age), 0, fas),
     
-
+    cola.compound = cola.compound,
     COLA.scale = ifelse(cola.compound, (1 + cola)^(age - min(age)), 1 + cola * (age - min(age))),     # later we can specify other kinds of COLA scale. Note that these are NOT COLA factors. They are used to derive COLA factors for different retirement ages.
  
     
@@ -232,7 +232,7 @@ PV.annuity %<>%
 
 PV.annuity %>% head
 
-# PV.annuity %>% filter(start.year == 2015, age.r == 50, ea == 47)
+PV.annuity %>% filter(start.year == 1990, age.r == 60, ea == 34)
 
 
 
@@ -340,6 +340,9 @@ liab.la %<>% as.data.frame  %>% # filter(start.year == -41, ea == 21, age.retire
   select(year, ea, age, year.r, age.r, start.year, B.la, ALx.la) %>% 
   arrange(age.r, start.year, ea, age)
 
+
+# l.flexCOLA <- list(PV.annuity, liab.active, liab.la) 
+# save(l.flexCOLA, file = "l.flexCOLA.RData")
 
 # Spot check
 # liab.la %>% filter(start.year == 2016, ea == 20, age.r == 51) %>% as.data.frame()

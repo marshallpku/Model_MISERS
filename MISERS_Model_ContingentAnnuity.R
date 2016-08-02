@@ -136,6 +136,7 @@ get_liab.ben <- function(gender.R,
       ) %>% 
     filter(age >= age.r) %>%  
     mutate(
+      cola.compound = cola.compound,
       COLA.scale = ifelse(cola.compound,  (1 + cola_)^(row_number() - 1), 1 + cola_ * (row_number() - 1)),
       B.la =  COLA.scale * reduction, # reduction
       pxm.R = 1 - qxm.R,

@@ -66,7 +66,8 @@ mortality.post.model <- list.decrements$mortality.post.model
 
 ## Exclude selected type(s) of initial members
  # init_actives_all %<>% mutate(nactives = 0) 
-  init_retirees_all %<>% mutate(nretirees = 0)
+ # init_retirees.la_all %<>% mutate(nretirees.la = 0)
+ # init_retirees.ca_all %<>% mutate(nretirees.ca = 0)
  # init_beneficiaries_all %<>% mutate(nbeneficiaries = 0)
  # init_terminated_all %<>% mutate(nterm = 0)
 

@@ -115,7 +115,7 @@ for(runName in runList$runname ){
   if(paramlist$nyear.override != 0) Global_paramlist$nyear <- paramlist$nyear.override
   
   
-  paramlist$cola.compound <- FALSE
+  paramlist$cola.compound <- TRUE
   paramlist$cola <- 0.03
   
   paramlist$Grouping    <- "fillin"
