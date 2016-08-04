@@ -180,7 +180,7 @@ penSim_results <- run_sim(Tier_select, AggLiab)
 
 
 var_display1 <- c("Tier", "sim", "year", "FR", "MA", "AL", 
-                  "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB",
+                  "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB", "B",
                   # "AL.disb.la", "AL.disb.ca", "AL.death", "PVFB",
                   #"PVFB.laca", "PVFB.LSC", "PVFB.v", "PVFB", 
                   # "B", "B.la", "B.ca", "B.v", "B.disb.la","B.disb.ca", 

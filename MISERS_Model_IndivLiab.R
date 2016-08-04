@@ -226,7 +226,7 @@ PV.annuity %<>%
   mutate(
     year.r = start.year + age.r - ea, # year of retirement
     Bx     = ifelse(year.r > init.year, Bx, benefit),
-    BwCOLA     = get_BwCOLA(Bx[age == age.r], min(age):max(age), cola, T),
+    BwCOLA     = get_BwCOLA(Bx[age == age.r], min(age):max(age), cola, F, 300),
     APV.BwCOLA = get_rollingAPV(BwCOLA, pxm.post.W, i)  # rolling actuarial PV from the year of retirement
     ) 
 
