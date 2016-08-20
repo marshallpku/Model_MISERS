@@ -28,9 +28,7 @@
 # - probability of ERC rate exceeding a% in any of the years through year x
 
 
-
-  
-  
+ 
   calc_FR.pctless  <- function(df_results, FR.pct = c(40, 60)){
     
     # df_results <- results.stch 

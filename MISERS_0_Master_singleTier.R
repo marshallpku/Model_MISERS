@@ -4,11 +4,6 @@ gc()
  Tier_select <- "t1"
 
  
- 
- 
- 
- 
- 
 #*********************************************************************************************************
 # 1.1 Load data,  for all tiers ####
 #*********************************************************************************************************
@@ -179,7 +174,7 @@ penSim_results <- run_sim(Tier_select, AggLiab)
 #*********************************************************************************************************
 
 
-var_display1 <- c("Tier", "sim", "year", "FR", "MA", "AL", 
+var_display1 <- c("Tier", "sim", "year", "FR_MA", "MA", "AL", 
                   "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB", "B",
                   # "AL.disb.la", "AL.disb.ca", "AL.death", "PVFB",
                   #"PVFB.laca", "PVFB.LSC", "PVFB.v", "PVFB", 
@@ -187,10 +182,9 @@ var_display1 <- c("Tier", "sim", "year", "FR", "MA", "AL",
                   "PR", "NC_PR", "NC","ERC")
 
 
-var_display2 <- c("Tier", "sim", "year", "FR", "MA", "AL", "EEC","ERC","ERC_PR","B", "B.v", 
+var_display2 <- c("Tier", "sim", "year", "FR_MA", "MA", "AL", "EEC","ERC","ERC_PR","B", "B.v", "SC", "C", 
                   "nactives", "nretirees", "nla", "n.ca.R1", "n.ca.R0S1", "nterms", 
                   "ndisb.la", "ndisb.ca.R1", "ndisb.ca.R0S1" )
-
 
 
 
@@ -224,13 +218,18 @@ penSim_results %>% names
 # detective.t13 %>% filter(sim == -1) %>% select(Tier,year, FR, MA, AL, AL.act,AL.act.laca, AL.act.v,AL.act.LSC, AL.la, AL.ca, AL.term, AL, PVFB.laca, PVFB.LSC, PVFB.v, PVFB, 
 #                         B, B.la, B.ca, B.LSC,B.v, nactives, nterms, PR, NC_PR) %>% data.frame
 
+# AL.act: 3.12b
+# AL.nonact: 15.64 - 3.12=12.52  
+# NC rate 5.88%
 
 
 
 
+PVPR <- penSim_results %>% filter(sim == -1) %>%
+  mutate(PV.PR = PR * (1/(1 + 0.075))^(year - 2015)) %>% 
+  summarise(PV.PR = sum(PV.PR))
 
-
-
+(11123171373 - 1222881091 + 635685729) * 1.08
 
 
 

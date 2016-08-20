@@ -18,11 +18,6 @@
 
 # 6. Selecting variables for the chosen actuarial method
 
-# Notes for LAFPP
- # 1. benefit factors given in AVs are already percentages of final average salary, therefore it should not be multiplied by 
-   # yos when calculating Bx.
- # 2. Benefits foer vested terms are currently modeled as life annuity. Later we may want to model it as contingent annuity. 
-
 
 
 

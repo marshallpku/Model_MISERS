@@ -201,6 +201,12 @@ run_sim <- function(Tier_select_,
   penSim0$ndisb.ca.R0S1 <- AggLiab_$disb.ca[,  "n.disb.R0S1"]
 
   
+  # External Fund
+  penSim0 %<>% 
+    left_join(extFund.unadj) %>% 
+    mutate(ExtFund.unadj = na2zero(ExtFund.unadj))
+  
+
   penSim0 <- as.list(penSim0) # Faster to extract elements from lists than frame data frames.
   
   
@@ -243,8 +249,7 @@ run_sim <- function(Tier_select_,
   
   SC_amort0 <- rbind(SC_amort.init, SC_amort0)
   # The amortization basis of year j should be placed in row nrow.initAmort + j - 1. 
-  
-  
+
   
   #*************************************************************************************************************
   #                                       Simuation  ####
@@ -268,7 +273,7 @@ run_sim <- function(Tier_select_,
     
     for (j in 1:nyear){
       
-      #j <- 13
+      #j <- 2
 
 
       # MA(j) and EAA(j) 
@@ -300,10 +305,10 @@ run_sim <- function(Tier_select_,
       
       
       ## Initial unrecognized returns
-      if((init_AA %in% c("AL_pct", "AA0")) & useAVunrecReturn & k != -1 & tier == "sumTiers"){
+      if((init_AA %in% c("AL_pct", "AA0")) & useAVunrecReturn & k != -1){ # & tier == "sumTiers"){
 
         # Adjusting initila unrecognized returns
-        init_unrecReturns.adj <-  mutate(init_unrecReturns.unadj_, DeferredReturn = DeferredReturn * (penSim$MA[1] - penSim$AA[1])/sum(DeferredReturn) )
+        init_unrecReturns.adj <-  mutate(init_unrecReturns.unadj_, DeferredReturn = DeferredReturn * (penSim$MA[1] - penSim$AA[1])/sum(DeferredReturn))
 
         # Adjust AA for inital unrecognized returns
         #mm <- j - 1
@@ -348,13 +353,25 @@ run_sim <- function(Tier_select_,
       #if(j > 1){ 
       if(j > ifelse(useAVamort, 1, 0)){ 
         # if useAVamort is TRUE, AV amort will be used for j = 1, not the one calcuated from the model. This may cause inconsistency in the model results 
-        if(amort_type == "closed") SC_amort[nrow.initAmort + j - 1, j:(j + m - 1)] <- amort_LG(penSim$Amort_basis[j], i, m, salgrowth_amort, end = FALSE, method = amort_method)  
+        if(amort_type == "closed") SC_amort[nrow.initAmort + j - 1, j:(j + m - 1)] <- amort_LG(penSim$Amort_basis[j], i, m, salgrowth_amort, end = FALSE, method = amort_method)
+      
         }
       
       # Supplemental cost in j
+      
+      if (amort_type == "pseudoClosed"){
+       # When using open amortization with diminishing amort period,
+       # Set m equal to m.year1 in year 1, reset m to m.start when m reaches m.reset
+        if(j == 1) m <- m.year1 else {
+          m <- ifelse(m <= m.reset, m.start, m - 1)
+        }
+      }
+      
       penSim$SC[j] <- switch(amort_type,
                              closed = sum(SC_amort[, j]),
-                             open   = amort_LG(penSim$UAAL[j], i, m, salgrowth_amort, end = FALSE, method = amort_method)[1])
+                             open         = amort_LG(penSim$UAAL[j], i, m, salgrowth_amort, end = FALSE, method = amort_method)[1],
+                             pseudoClosed = amort_LG(penSim$UAAL[j], i, m, salgrowth_amort, end = FALSE, method = amort_method)[1]
+                             )
       
       #**************************************************************************************************************
       
@@ -410,6 +427,9 @@ run_sim <- function(Tier_select_,
       
       # C(j)
       penSim$C[j] <- with(penSim, EEC[j] + ERC[j])
+      
+      if(useExtFund & k != -1) penSim$C[j] <- penSim$C[j] + penSim$ExtFund.unadj[j]
+      
       
       # C(j) - ADC(j)
       penSim$C_ADC[j] <- with(penSim, C[j] - ADC[j])

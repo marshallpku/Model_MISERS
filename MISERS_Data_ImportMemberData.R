@@ -434,7 +434,7 @@ init_retirees_all <- fn_ret.ben("RetBen_t1_CRR2013", file_memberData)
 #   ungroup
 
 
-init_retirees_all %<>%
+init_retirees_all %<>% filter(age <= 100) %>% 
   group_by(planname) %>%
   left_join(dist_init.disb) %>%
   mutate(nretirees = nretirees * 57615 / sum(nretirees),

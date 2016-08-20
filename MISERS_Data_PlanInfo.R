@@ -185,10 +185,17 @@ init_amort_raw %<>%
 #                      ## Initial unrecognized return  ####
 #*********************************************************************************************************
 
-init_unrecReturns.unadj <- 0 # read_ExcelRange(file_planInfo, sheet = "Init_unrecReturn", colTypes="numeric") 
+init_unrecReturns.unadj <- read_ExcelRange(file_planInfo, sheet = "Init_unrecReturn", colTypes="numeric") 
 
 
-save(mortality_MISERS, retRates, termRates, disbRates, salgrowth, tier.param, init_amort_raw, init_unrecReturns.unadj,
+
+#*********************************************************************************************************
+#                      ## External fund   ####
+#*********************************************************************************************************
+extFund.unadj <- read_ExcelRange(file_planInfo, sheet = "External_Fund", colTypes="numeric") 
+
+
+save(mortality_MISERS, retRates, termRates, disbRates, salgrowth, tier.param, init_amort_raw, init_unrecReturns.unadj, extFund.unadj,
      file  = "Data_inputs/MISERS_PlanInfo.RData")
 
 

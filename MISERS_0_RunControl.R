@@ -61,6 +61,7 @@ source("Functions.R")
   # retirement rates are weighted averages of conservation, correction and others. 
   # For now(July 19, 2016), use retiremetn rule for "others" for all members. 
 
+
 # Notes on pre-retirement death benefits
   # Currently, the benefit is 100% of retirement benefit. In later versions, the benefit should be 
   # reduced in accordance with a 100% Joint and Survivor form of payment.  
@@ -71,6 +72,32 @@ source("Functions.R")
   # As of 7/9/2016, the proportion of life annuitants is 20%. 
 
 
+# Notes on uncompounded COLA (as of Aug 18, 2016)
+  # Non-compounded cola is only applied to retirement benefit in the form of life annuity. 
+  # It is assumed all retirees opt for life annuity. Does this great affect future AL and cash flow. (not a big impact on year-1 values. ) 
+  # Disability benefit still uses compound cola for now. This should not make a big difference.
+  # No death benefit. (very small)
+
+
+# Notes on initial assets
+  # Initial actuarial asset  value in the model is calculated as follows: (notations follow AV2014 pdf page 7)
+    # AA1 = (7) + 8(a) + 8(b) + 8(c)   (AA with PV of future external funding)
+    # FR_AA1 = AA1 / (6)
+    # AA(model) = AL(model) * FR_AA1
+    # FR_AA1 = (9961903019 + 144467485 + 64310668 + 317520340)/16172937815 = 0.6485032 (param AA_0_pct in runControl file)
+ # Initial market asset value is calculated in the same manner.
+    # FR_MA1 = (10974806091 + 144467485 + 64310668 + 317520340)/16172937815 = 0.7111327 (param MA_0_pct in runControl file)
+
+ # Amortization amount is based on AA(model)
+
+
+# Notes on amortization 
+   # Open level dollar amortization with diminishing amort period
+   # Amort period is reset to 30 when reaching 20. 
+
+
+# Notes on asset smoothing 
+    # The difference between actuarial asset value and market asset value are recognized over the next 5 years.
 
 
 
@@ -83,14 +110,12 @@ path_RunControl <- paste0(folder_run, "/" ,filename_RunControl)
 
 # Import global parameters
 runList <- read_excel(path_RunControl, sheet="params", skip = 0) %>% filter(!is.na(runname), include == 1)
-runList
 
 # Import return scenarios
 returnScenarios <- read_excel(path_RunControl, sheet="returns", skip = 0) %>% filter(!is.na(scenario))
 
 # Import global parameters
-Global_paramlist <- read_excel(path_RunControl, sheet="GlobalParams") %>% filter(!is.na(init.year)) %>% 
-                 as.list
+Global_paramlist <- read_excel(path_RunControl, sheet="GlobalParams") %>% filter(!is.na(init.year)) %>% as.list
 
 
 #### Run Models and Save  ####
@@ -156,7 +181,7 @@ for(runName in runList$runname ){
   
   #paramlist$cola <- 0.015
     
-  paramlist$startingSal_growth <- 0.04
+  paramlist$startingSal_growth <- 0.035
     
   paramlist$actuarial_method <- "EAN.CP"
     
@@ -192,7 +217,7 @@ for(runName in runList$runname ){
   paramlist$smooth_method <- "method1"
   # paramlist$salgrowth_amort <- 0.04
   #amort_method <- "cp",
-  paramlist$amort_type <- "closed"
+  # paramlist$amort_type <- "open"
     #nonNegC <- "FALSE",
     #EEC_fixed <- "TRUE",
     #ConPolicy <- "ADC",
@@ -209,42 +234,15 @@ for(runName in runList$runname ){
   
 
   
-  # if(paramlist$tier == "sumTiers"){
-  #   source("LAFPP_0_Master_allTiers.R")
-  #   save(penSim_results.sumTiers, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
-  #   
-  # } else {
-  #   Tier_select <- paramlist$tier
-  #   source("LAFPP_0_Master_singleTier.R")
-  #   save(penSim_results, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
-  # }
+  if(paramlist$tier == "sumTiers"){
+    source("MISERS_0_Master_allTiers.R")
+    save(penSim_results.sumTiers, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
+
+  } else {
+    Tier_select <- paramlist$tier
+    source("MISERS_0_Master_singleTier.R")
+    save(penSim_results, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-   
-   
-# Checking the importance of death benefit
-
-# Tier_select <- "t5"
-# source("Test_0_Master_singleTier.R")
-
-
-# 
-# 
-# 
-# 166987857/16955579066
-# 
-# (16955579066 + 541456502 - 798249899)*0.04
-
-
 
 
