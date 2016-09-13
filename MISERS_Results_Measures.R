@@ -21,7 +21,7 @@ library("XLConnect") # slow but convenient because it reads ranges; NOTE: I had 
 # library(xlsx)
 library("btools")
 
-
+source("Functions.R")
 
 
 path.resultFile <- "Results/"
@@ -131,10 +131,11 @@ path.resultFile <- "Results/"
   
   calc_qts  <- function(df_results, varname, qts = c(0.1, 0.25, 0.5, 0.75, 0.9)){
     
-    # df_results <- results.stch 
-    # qts = c(0.1, 0.25, 0.5, 0.75, 0.9)
-    # varname = "FR"
+     # df_results <- penSim_results %>% filter(sim >0, year >2015) #results.stch 
+     # qts = c(0.1, 0.25, 0.5, 0.75, 0.9)
+     # varname = "ERC_PR"
     # qts.single = 0.1
+    
     
     runname <- paste0(df_results$Tier[1],"_", df_results$runname[1])
     
@@ -146,7 +147,7 @@ path.resultFile <- "Results/"
       
       df_results %>% 
         group_by(year) %>% 
-        summarize(var = quantile(var, qts.single)) %>% 
+        summarize(var = quantile(var, qts.single, na.rm = T)) %>% 
         plyr::rename(c("var" = paste0(varname, ".q", qts.single)))
     }
     
@@ -156,6 +157,19 @@ path.resultFile <- "Results/"
       select(runname, everything())
     
   }
+  # need to check issue with NA, NaN values
+  
+  
+  # # load("Results/results_RS1.RData")
+  # # 
+  # # calc_qts(penSim_results, "ERC_PR")
+  # 
+  # 
+  # x <- penSim_results %>% select(sim, year, ERC_PR, ERC, PR) %>% filter(sim >0)
+  # x$ERC_PR
+  # 
+  
+  # Function to read result data frame given the file name and path
   
   
   get_measureList <- function(runname, path){
@@ -166,7 +180,7 @@ path.resultFile <- "Results/"
     fileName <- paste0(path,"results_", runname, ".RData") 
     load(fileName)
     
-    results.stch <- penSim_results.sumTiers %>% filter(sim > 0)
+    results.stch <- penSim_results %>% filter(sim > 0, year > 2015)
     
     prob.FR.pctless <- results.stch %>%  calc_FR.pctless
     prob.FR.pctmore <- results.stch %>%  calc_FR.pctmore(rolling = T)
@@ -193,6 +207,8 @@ path.resultFile <- "Results/"
     return(get(paste0("RiskMeasures_", runname)))
     
   }
+  # Inputs should be a result data frame
+  
   
   # Extract a risk measure from each model run
   get_measure <- function(measureName, measureList){
@@ -216,24 +232,25 @@ path.resultFile <- "Results/"
   #   Calculating risk measures ####  
   #*******************************************************
   
-  RiskMeasures_sumTiers_RS1 <- get_measureList("sumTiers_RS1", path.resultFile)
-  RiskMeasures_sumTiers_RS2 <- get_measureList("sumTiers_RS2", path.resultFile)
-  RiskMeasures_sumTiers_RS3 <- get_measureList("sumTiers_RS3", path.resultFile)
-  RiskMeasures_sumTiers_RS4 <- get_measureList("sumTiers_RS4", path.resultFile)
-  RiskMeasures_sumTiers_RS5 <- get_measureList("sumTiers_RS5", path.resultFile)
+  RiskMeasures_RS1 <- get_measureList("RS1", path.resultFile)
+  RiskMeasures_RS2 <- get_measureList("RS2", path.resultFile)
+  RiskMeasures_RS3 <- get_measureList("RS3", path.resultFile)
+  RiskMeasures_RS4 <- get_measureList("RS4", path.resultFile)
+  RiskMeasures_RS5 <- get_measureList("RS5", path.resultFile)
   
   
-  RiskMeasures_sumTiers_RS1$prob.FR.pctless
-  RiskMeasures_sumTiers_RS2$prob.FR.pctless
-  RiskMeasures_sumTiers_RS3$prob.FR.pctless
-  RiskMeasures_sumTiers_RS4$prob.FR.pctless
-  RiskMeasures_sumTiers_RS5$prob.FR.pctless
   
-  RiskMeasures_sumTiers_RS1$prob.ERCsharpRise
-  RiskMeasures_sumTiers_RS2$prob.ERCsharpRise
-  RiskMeasures_sumTiers_RS3$prob.ERCsharpRise
-  RiskMeasures_sumTiers_RS4$prob.ERCsharpRise
-  RiskMeasures_sumTiers_RS5$prob.ERCsharpRise
+  RiskMeasures_RS1$prob.FR.pctless
+  RiskMeasures_RS2$prob.FR.pctless
+  RiskMeasures_RS3$prob.FR.pctless
+  RiskMeasures_RS4$prob.FR.pctless
+  RiskMeasures_RS5$prob.FR.pctless
+  
+  RiskMeasures_RS1$prob.ERCsharpRise
+  RiskMeasures_RS2$prob.ERCsharpRise
+  RiskMeasures_RS3$prob.ERCsharpRise
+  RiskMeasures_RS4$prob.ERCsharpRise
+  RiskMeasures_RS5$prob.ERCsharpRise
   
   # rm(RiskMeasures_sumTiers_RS1)
   # load("Results/RiskMeasures_sumTiers_RS1.RData", ex <- new.env())
@@ -242,11 +259,11 @@ path.resultFile <- "Results/"
   
 
 RiskMeasures_list <- list(
-  RiskMeasures_sumTiers_RS1,
-  RiskMeasures_sumTiers_RS2,
-  RiskMeasures_sumTiers_RS3,
-  RiskMeasures_sumTiers_RS4,
-  RiskMeasures_sumTiers_RS5
+  RiskMeasures_RS1,
+  RiskMeasures_RS2,
+  RiskMeasures_RS3,
+  RiskMeasures_RS4,
+  RiskMeasures_RS5
 )
 
 
@@ -265,46 +282,68 @@ df_FR.qts %>% data.frame
 #   Making exploratory graphs ####  
 #*******************************************************
 
-df_FR.pctless %>% gather(var, value, -runname, -year) %>% 
+year.display <- c(2015:2044)
+
+g.FR.pctless <- 
+df_FR.pctless %>% filter(year %in% year.display) %>% gather(var, value, -runname, -year) %>% 
+  ggplot(aes(x = year, y = value, color = runname)) + theme_bw() + facet_grid(.~var) + 
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(2010, 2100, 5))
+g.FR.pctless
+
+g.ERCsharpRise <- 
+df_ERCsharpRise %>% filter(year %in% year.display)%>% gather(var, value, -runname, -year) %>% 
   ggplot(aes(x = year, y = value, color = runname)) + theme_bw() + facet_grid(.~var) + 
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(2015, 2100, 5))
+g.ERCsharpRise 
 
-df_ERCsharpRise %>% gather(var, value, -runname, -year) %>% 
+g.highERC <- 
+df_highERC%>% filter(year %in% year.display) %>% gather(var, value, -runname, -year) %>% 
   ggplot(aes(x = year, y = value, color = runname)) + theme_bw() + facet_grid(.~var) + 
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(2015, 2100, 5))
+g.highERC
 
-
-df_highERC %>% gather(var, value, -runname, -year) %>% 
+g.FR.pctmore <- 
+df_FR.pctmore %>% filter(year %in% year.display)%>% gather(var, value, -runname, -year) %>% 
   ggplot(aes(x = year, y = value, color = runname)) + theme_bw() + facet_grid(.~var) + 
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(2015, 2100, 5))
+g.FR.pctmore
 
-
-df_FR.pctmore %>% gather(var, value, -runname, -year) %>% 
-  ggplot(aes(x = year, y = value, color = runname)) + theme_bw() + facet_grid(.~var) + 
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(2015, 2100, 5))
-
-  
-df_FR.qts %>% gather(var, value, -runname, -year) %>% 
+g.FR.qts <-   
+df_FR.qts %>% filter(year %in% year.display) %>% gather(var, value, -runname, -year) %>% 
   ggplot(aes(x = year, y = value, color = var)) + theme_bw() + facet_grid(.~runname) + 
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(2015, 2100, 5))
+g.FR.qts
+# Why FRs are different across scenarios?
 
-
-df_ERC_PR.qts %>% gather(var, value, -runname, -year) %>% 
+g.ERC_PR.qts <- 
+df_ERC_PR.qts %>% filter(year %in% year.display) %>% gather(var, value, -runname, -year) %>% 
   ggplot(aes(x = year, y = value, color = var)) + theme_bw() + facet_grid(.~runname) + 
   geom_point() + 
   geom_line() + 
+  coord_cartesian(ylim = c(0, 500))+
   scale_x_continuous(breaks = seq(2015, 2100, 5)) +
-  scale_y_continuous(breaks = seq(0, 100, 10))
+  scale_y_continuous(breaks = seq(0, 500, 20))
+g.ERC_PR.qts
+
+
+ggsave(g.FR.pctless,   file = paste0(path.resultFile, "g.FR.pctless.png"), width  = 10, height = 5)
+ggsave(g.ERCsharpRise, file = paste0(path.resultFile, "g.ERCsharpRise.png"), width  = 10, height = 5)
+ggsave(g.highERC,      file = paste0(path.resultFile, "g.highERC.png"), width  = 10, height = 5)
+ggsave(g.FR.pctmore,   file = paste0(path.resultFile, "g.FR.pctmore.png"), width  = 10, height = 5)
+
+ggsave(g.FR.qts,     file = paste0(path.resultFile, "g.FR.qts.png"), width  = 15, height = 5)
+ggsave(g.ERC_PR.qts, file = paste0(path.resultFile, "g.ERC_PR.qts.png"), width  = 15, height = 5)
+
 
 
 
