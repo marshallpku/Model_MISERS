@@ -320,8 +320,8 @@ liab.la %<>% as.data.frame  %>% # filter(start.year == -41, ea == 21, age.retire
     year   = start.year + age - ea,
     year.r = start.year + age.r - ea, # year of retirement
     #Bx.laca  = ifelse(is.na(Bx.laca), 0, Bx.laca),  # just for safety
-    B.la = na2zero(BwCOLA),        # annual benefit (life annuity) 
-    ALx.la = na2zero(APV.BwCOLA)   # liability for remaining retirement benefit
+    B.la   = na2zero(BwCOLA),        # annual benefit (life annuity) 
+    ALx.la = na2zero(APV.BwCOLA)     # liability for remaining retirement benefit
     
     # B.la   = ifelse(year.r <= init.year,
     #                 benefit[year == init.year] * COLA.scale / COLA.scale[year == init.year],      # Benefits for initial retirees

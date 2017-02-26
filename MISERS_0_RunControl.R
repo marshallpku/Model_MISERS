@@ -233,16 +233,22 @@ for(runName in runList$runname ){
   paramlist$v     = with(paramlist, 1/(1 + i))
   
 
-  
-  if(paramlist$tier == "sumTiers"){
-    source("MISERS_0_Master_allTiers.R")
-    save(penSim_results.sumTiers, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
-
-  } else {
-    Tier_select <- paramlist$tier
-    source("MISERS_0_Master_singleTier.R")
-    save(penSim_results, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
-  }
+  # 
+  # if(paramlist$tier == "sumTiers"){
+  #   source("MISERS_0_Master_allTiers.R")
+  #   save(penSim_results.sumTiers, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
+  # 
+  # } else {
+  #   Tier_select <- paramlist$tier
+  #   source("MISERS_0_Master_singleTier.R")
+  #   save(penSim_results, file = paste0(folder_save, "results_",  paramlist$Tier, runName, ".RData"))
+  # }
 }
+
+load("Results/results_RS1.RData")
+
+penSim_results %>% filter(sim == 0)
+
+
 
 

@@ -1,17 +1,17 @@
 
 gc()
 
- Tier_select <- "t1"
+Tier_select <- "t1"
 
- 
 #*********************************************************************************************************
 # 1.1 Load data,  for all tiers ####
 #*********************************************************************************************************
 
 # Plan information
-# source("MISERS_Data_RP2000.R")
+ #source("MISERS_Data_RP2000.R")
  source("MISERS_Data_PlanInfo.R")
  source("MISERS_Data_ImportMemberData.R")
+
 
 load("Data_inputs/MISERS_PlanInfo.RData")    # for all tiers
 load("Data_inputs/MISERS_MemberData.RData")  # for all tiers
@@ -135,16 +135,24 @@ liab.disb.ca <- get_contingentAnnuity(Tier_select,
 
 
 #*********************************************************************************************************
-# 4. Individual actuarial liabilities, normal costs and benenfits ####
+# 4.1 Individual actuarial liabilities, normal costs and benenfits ####
 #*********************************************************************************************************
 source("MISERS_Model_IndivLiab.R")
 gc()
 
-
 liab <- get_indivLab(Tier_select)
 
 
-liab$active %>% select(year, ea, age, COLA.scale) %>% arrange(ea, age) %>% head(100)
+# liab$active %>% select(year, ea, age, COLA.scale) %>% arrange(ea, age) %>% head(100)
+
+
+#*********************************************************************************************************
+# 4.2 Estiamted AL and cash flow for DC disability benefits ####
+#*********************************************************************************************************
+source("MISERS_Model_DC.R")
+
+liab.DC <- get_DCBen(NC.DC0, NC_B.1, NC_AL.1, NC.growth, B.growth)
+
 
 
 #*********************************************************************************************************
@@ -164,7 +172,7 @@ AggLiab <- get_AggLiab(Tier_select,
 # 6.  Simulation ####
 #*********************************************************************************************************
 source("MISERS_Model_Sim.R")
-penSim_results <- run_sim(Tier_select, AggLiab)
+penSim_results <- run_sim(Tier_select, AggLiab, liab.DC)
 
 
 
@@ -187,49 +195,34 @@ var_display2 <- c("Tier", "sim", "year", "FR_MA", "MA", "AL", "EEC","ERC","ERC_P
                   "ndisb.la", "ndisb.ca.R1", "ndisb.ca.R0S1" )
 
 
+var_display.cali <- c("runname", "sim", "year", "FR", "MA", "AA", "AL", 
+                      "AL.act",
+                      "PVFB", 
+                      "B", # "B.la", "B.ca", "B.disb.la","B.disb.ca", 
+                      # "C",   
+                      "NC","SC", "ERC", "EEC",
+                      #"PR", "NC_PR", "ERC_PR",
+                      "UAAL", "AL.DC")
+
 
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display1)) %>% print
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display2)) %>% print
-#penSim_results %>% filter(sim == -1) %>% data.frame
+
+# Calibration
+penSim_results %>% filter(sim == -1) %>% select(one_of(var_display.cali)) %>% print
+penSim_results %>% filter(sim == 0)  %>% select(one_of(var_display.cali)) %>% print
 
 
 
-penSim_results %>% names
 
-# load("Check_allTiers.RData")
+
+
 # 
-# penSim_results %>% filter(sim == -1) %>% select(one_of(var_display1)) %>% print
-# penSim_results.t6 %>% filter(sim == -1) %>% select(one_of(var_display1)) %>% print
+# PVPR <- penSim_results %>% filter(sim == -1) %>%
+#   mutate(PV.PR = PR * (1/(1 + 0.075))^(year - 2015)) %>% 
+#   summarise(PV.PR = sum(PV.PR))
 # 
-# penSim_results %>% filter(sim == -1) %>% select(one_of(var_display2)) %>% print
-# penSim_results.t6 %>% filter(sim == -1) %>% select(one_of(var_display2)) %>% print
-
-
-
-#*********************************************************************************************************
-# Detecitve work: term rates ####
-#*********************************************************************************************************
-# The AL of actives becomes even higher when higher term rates are used. 
-
-# detective.t13 <- penSim_results
-# save(detective.t13, file= "detective.t13.RData")
+# (11123171373 - 1222881091 + 635685729) * 1.08
 # 
-# load("detective.t13.RData")
-# detective.t13 %>% filter(sim == -1) %>% select(Tier,year, FR, MA, AL, AL.act,AL.act.laca, AL.act.v,AL.act.LSC, AL.la, AL.ca, AL.term, AL, PVFB.laca, PVFB.LSC, PVFB.v, PVFB, 
-#                         B, B.la, B.ca, B.LSC,B.v, nactives, nterms, PR, NC_PR) %>% data.frame
-
-# AL.act: 3.12b
-# AL.nonact: 15.64 - 3.12=12.52  
-# NC rate 5.88%
-
-
-
-
-PVPR <- penSim_results %>% filter(sim == -1) %>%
-  mutate(PV.PR = PR * (1/(1 + 0.075))^(year - 2015)) %>% 
-  summarise(PV.PR = sum(PV.PR))
-
-(11123171373 - 1222881091 + 635685729) * 1.08
-
 
 

@@ -4,6 +4,7 @@
 
 run_sim <- function(Tier_select_,
                     AggLiab_,
+                    liab.DC_,
                     i.r_ = i.r,
                     init_amort_raw_ = init_amort_raw, # amount.annual, year.remaining 
                     init_unrecReturns.unadj_ = init_unrecReturns.unadj,
@@ -14,6 +15,7 @@ run_sim <- function(Tier_select_,
       # Tier_select_ =  "t1" #  Tier_select
       # i.r_ = i.r
       # AggLiab_        =  AggLiab # AggLiab.sumTiers
+      # liab.DC_ = liab.DC
       # init_amort_raw_ = init_amort_raw
       # init_unrecReturns.unadj_ = init_unrecReturns.unadj
       # paramlist_      = paramlist
@@ -157,6 +159,10 @@ run_sim <- function(Tier_select_,
   
   penSim0$AL       <- with(penSim0, AL.act + AL.la + AL.ca +  AL.term + AL.death + AL.disb.la + AL.disb.ca)
   
+  penSim0$AL.DC <- liab.DC_$AL.DC
+  #penSim0$AL    <- with(penSim0, AL + AL.DC)
+  #penSim0$NC    <- with(penSim0, NC + NC.DC)
+  #penSim0$B    <- with(penSim0, B + B.DC)
   
   # NC(j)
   penSim0$NC.laca <- AggLiab_$active[, "NCx.laca.sum"]
@@ -164,6 +170,9 @@ run_sim <- function(Tier_select_,
   penSim0$NC.death<- AggLiab_$active[, "NCx.death.sum"]
   penSim0$NC.disb <- AggLiab_$active[, "NCx.disb.sum"] 
   penSim0$NC      <-  with(penSim0, NC.laca + NC.v + NC.death + NC.disb)
+  
+  penSim0$NC.DC <- liab.DC_$NC.DC
+  #penSim0$NC    <- with(penSim0, NC + NC.DC)
   
   
   # PVFB(j)
@@ -181,6 +190,9 @@ run_sim <- function(Tier_select_,
   penSim0$B.disb.la  <- AggLiab_$disb.la[, "B.disb.la.sum"]
   penSim0$B.disb.ca  <- AggLiab_$disb.ca[, "B.disb.ca.sum"]
   penSim0$B       <- with(penSim0, B.la + B.ca + B.v + B.death + B.disb.la + B.disb.ca)
+  
+  penSim0$B.DC <- liab.DC_$B.DC
+  #penSim0$B    <- with(penSim0, B + B.DC)
   
   # PR(j)
   penSim0$PR <- AggLiab_$active[, "PR.sum"]
@@ -262,6 +274,13 @@ run_sim <- function(Tier_select_,
   penSim_results <- foreach(k = -1:nsim, .packages = c("dplyr", "tidyr")) %dopar% {
     # k <- 0
     # initialize
+    
+    if(DC_include == 1 & k != -1){
+      penSim0$AL <- with(penSim0, AL + AL.DC)
+      penSim0$NC <- with(penSim0, NC + NC.DC)
+      penSim0$B  <- with(penSim0, B + B.DC)
+    }
+    
     penSim <- penSim0
     SC_amort <- SC_amort0
     
@@ -304,20 +323,39 @@ run_sim <- function(Tier_select_,
       }
       
       
+      # ## Initial unrecognized returns (old)
+      # if((init_AA %in% c("AL_pct", "AA0")) & useAVunrecReturn & k != -1){ # & tier == "sumTiers"){
+      # 
+      #   # Adjusting initila unrecognized returns
+      #   init_unrecReturns.adj <-  mutate(init_unrecReturns.unadj_, DeferredReturn = DeferredReturn * (penSim$MA[1] - penSim$AA[1])/sum(DeferredReturn))
+      # 
+      #   # Adjust AA for inital unrecognized returns
+      #   #mm <- j - 1
+      #   if((j - 1 + init.year) %in% init_unrecReturns.adj$year) penSim$AA[j] <- penSim$AA[j] + with(init_unrecReturns.adj, DeferredReturn[year == (j - 1 + init.year)])
+      # 
+      #      # init_unrecReturns.adj[init_unrecReturns.adj$year - init.year + 1 == j, "DeferredReturn"] #  )
+      # 
+      # }
+
+      
       ## Initial unrecognized returns
-      if((init_AA %in% c("AL_pct", "AA0")) & useAVunrecReturn & k != -1){ # & tier == "sumTiers"){
-
+      if((init_AA %in% c("AL_pct", "AA0")) & useAVunrecReturn & k != -1 & Tier_select_ == "sumTiers"){
+        
         # Adjusting initila unrecognized returns
-        init_unrecReturns.adj <-  mutate(init_unrecReturns.unadj_, DeferredReturn = DeferredReturn * (penSim$MA[1] - penSim$AA[1])/sum(DeferredReturn))
-
+        init_unrecReturns.adj <-  mutate(init_unrecReturns.unadj_, DeferredReturn = DeferredReturn * (penSim$MA[1] - penSim$AA[1])/sum(DeferredReturn),
+                                         DeferredReturn.annualTot = sum(DeferredReturn) - cumsum(DeferredReturn) # Initial unrecognized return to be subtracted from AA in each year
+        )
+        
         # Adjust AA for inital unrecognized returns
         #mm <- j - 1
-        if((j - 1 + init.year) %in% init_unrecReturns.adj$year) penSim$AA[j] <- penSim$AA[j] + with(init_unrecReturns.adj, DeferredReturn[year == (j - 1 + init.year)])
-
-           # init_unrecReturns.adj[init_unrecReturns.adj$year - init.year + 1 == j, "DeferredReturn"] #  )
-
+        if((j - 1 + init.year) %in% init_unrecReturns.adj$year) penSim$AA[j] <- penSim$AA[j] - with(init_unrecReturns.adj, DeferredReturn.annualTot[year == (j - 1 + init.year)])
+        
+        # init_unrecReturns.adj[init_unrecReturns.adj$year - init.year + 1 == j, "DeferredReturn"] #  )
+        
       }
-
+      
+      
+      
       
       ## Apply corridor for MA, MA must not deviate from AA by more than 40%. 
       
@@ -354,18 +392,32 @@ run_sim <- function(Tier_select_,
       if(j > ifelse(useAVamort, 1, 0)){ 
         # if useAVamort is TRUE, AV amort will be used for j = 1, not the one calcuated from the model. This may cause inconsistency in the model results 
         if(amort_type == "closed") SC_amort[nrow.initAmort + j - 1, j:(j + m - 1)] <- amort_LG(penSim$Amort_basis[j], i, m, salgrowth_amort, end = FALSE, method = amort_method)
-      
         }
       
       # Supplemental cost in j
       
       if (amort_type == "pseudoClosed"){
+
+       if(k > 0){
+
        # When using open amortization with diminishing amort period,
        # Set m equal to m.year1 in year 1, reset m to m.start when m reaches m.reset
         if(j == 1) m <- m.year1 else {
           m <- ifelse(m <= m.reset, m.start, m - 1)
         }
+       }
+
+       if(k <= 0){
+
+         # For test simulation (k = -1) and deterministic simulation,
+         # amortization period does not reset.
+         if(j == 1) m <- m.year1 else {
+           m <- ifelse(m == 1, 1, m - 1)
+         }
+       }
       }
+
+
       
       penSim$SC[j] <- switch(amort_type,
                              closed = sum(SC_amort[, j]),

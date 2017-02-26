@@ -27,7 +27,7 @@
 
 
 # plan information file:
-file_planInfo <- "Data_inputs/MISERS_PlanInfo.xlsx"
+file_planInfo <- "Data_inputs/MISERS_PlanInfo_2015.xlsx"
 
 
 #*********************************************************************************************************
@@ -164,23 +164,6 @@ init_amort_raw %<>%
 # init_amort_raw #%>% str
 
 
-# Need to guess the assumed payroll growth rate. 
-# It looks 4% works very well. 
-# amort_cp(45090011, 0.075, 9, 0.04)
-# amort_cp(62698016, 0.075, 3, 0.04)
-# 
-# x <- mapply(amort_cp, p = init_amort_raw$balance, m = init_amort_raw$year.remaining,
-#        MoreArgs = list(i = 0.075, g = 0.04))
-# 
-# pay1 <- numeric(length(x)) 
-# for (i in 1:length(pay1)) pay1[i] <- x[[i]][1]
-# 
-# data.frame(pay1.AV = init_amort_raw$annual.payment, 
-#            pay1.calc = pay1) %>% 
-#   mutate(diff.pct = 100*pay1.calc/pay1.AV - 100)
-
-
-
 #*********************************************************************************************************
 #                      ## Initial unrecognized return  ####
 #*********************************************************************************************************
@@ -195,7 +178,12 @@ init_unrecReturns.unadj <- read_ExcelRange(file_planInfo, sheet = "Init_unrecRet
 extFund.unadj <- read_ExcelRange(file_planInfo, sheet = "External_Fund", colTypes="numeric") 
 
 
-save(mortality_MISERS, retRates, termRates, disbRates, salgrowth, tier.param, init_amort_raw, init_unrecReturns.unadj, extFund.unadj,
+save(mortality_MISERS, retRates, termRates, disbRates, 
+     salgrowth, 
+     tier.param, 
+     init_amort_raw, 
+     init_unrecReturns.unadj, 
+     extFund.unadj,
      file  = "Data_inputs/MISERS_PlanInfo.RData")
 
 
