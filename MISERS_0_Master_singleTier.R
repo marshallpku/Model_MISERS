@@ -3,6 +3,13 @@ gc()
 
 Tier_select <- "t1"
 
+
+# Calibration ####
+
+paramlist$bfactor <- 0.0165
+
+
+
 #*********************************************************************************************************
 # 1.1 Load data,  for all tiers ####
 #*********************************************************************************************************
@@ -77,6 +84,8 @@ mortality.post.model <- list.decrements$mortality.post.model
 # 
 # ## Exclude the external fund. (currently only STIP borrowing)
 # if(!paramlist$useExtFund) extFund %<>% mutate_each(funs(. * 0), -year)
+
+
 
 
 #*********************************************************************************************************
@@ -199,8 +208,9 @@ var_display.cali <- c("runname", "sim", "year", "FR", "MA", "AA", "AL",
                       "B", # "B.la", "B.ca", "B.disb.la","B.disb.ca", 
                       # "C",   
                       "NC","SC", "ERC", "EEC",
-                      #"PR", "NC_PR", "ERC_PR",
-                      "UAAL", "AL.DC")
+                      "PR",
+                      "NC_PR", "ERC_PR",
+                      "UAAL", "AL.DC", "NC.DC", "B.DC")
 
 
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display1)) %>% print
@@ -210,6 +220,54 @@ penSim_results %>% filter(sim == -1) %>% select(one_of(var_display2)) %>% print
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display.cali)) %>% print
 penSim_results %>% filter(sim == 0)  %>% select(one_of(var_display.cali)) %>% print
 
+penSim_results %>% filter(sim == 1)  %>% select(one_of(var_display.cali)) %>% print
+
+
+df_all.stch <- penSim_results  %>% 
+  filter(sim >= 0, year <= 2045)
+
+
+df_all.stch %<>%   
+  select(runname, sim, year, AL, MA, EEC, PR, ERC_PR) %>% 
+  group_by(runname, sim) %>% 
+  mutate(EEC_PR = 100 * EEC/PR,
+         FR_MA     = 100 * MA / AL,
+         FR40less  = cumany(FR_MA <= 40),
+         FR100more  = cumany(FR_MA >= 100),
+         FR100more2 = FR_MA >= 100,
+         ERC_high  = cumany(ERC_PR >= 50), 
+         ERC_hike  = cumany(na2zero(ERC_PR - lag(ERC_PR, 5) >= 10)),
+         EEC_high  = cumany(ifelse(is.nan(EEC_PR), 0, EEC_PR) >= 25)) %>% 
+  group_by(runname, year) %>% 
+  summarize(FR40less = 100 * sum(FR40less, na.rm = T)/n(),
+            FR100more = 100 * sum(FR100more, na.rm = T)/n(),
+            FR100more2= 100 * sum(FR100more2, na.rm = T)/n(),
+            ERC_high = 100 * sum(ERC_high, na.rm = T)/n(),
+            ERC_hike = 100 * sum(ERC_hike, na.rm = T)/n(),
+            EEC_high = 100 * sum(EEC_high, na.rm = T)/n(),
+            
+            FR.q10   = quantile(FR_MA, 0.1,na.rm = T),
+            FR.q25   = quantile(FR_MA, 0.25, na.rm = T),
+            FR.q50   = quantile(FR_MA, 0.5, na.rm = T),
+            FR.q75   = quantile(FR_MA, 0.75, na.rm = T),
+            FR.q90   = quantile(FR_MA, 0.9, na.rm = T),
+            
+            ERC_PR.q10 = quantile(ERC_PR, 0.1, na.rm = T),
+            ERC_PR.q25 = quantile(ERC_PR, 0.25, na.rm = T),
+            ERC_PR.q50 = quantile(ERC_PR, 0.5, na.rm = T),
+            ERC_PR.q75 = quantile(ERC_PR, 0.75, na.rm = T),
+            ERC_PR.q90 = quantile(ERC_PR, 0.9, na.rm = T),
+            
+            EEC_PR.q10 = quantile(EEC_PR, 0.1, na.rm = T),
+            EEC_PR.q25 = quantile(EEC_PR, 0.25, na.rm = T),
+            EEC_PR.q50 = quantile(EEC_PR, 0.5, na.rm = T),
+            EEC_PR.q75 = quantile(EEC_PR, 0.75, na.rm = T),
+            EEC_PR.q90 = quantile(EEC_PR, 0.9, na.rm = T)
+  ) %>% 
+  ungroup()
+
+
+df_all.stch
 
 
 

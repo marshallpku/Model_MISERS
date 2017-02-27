@@ -275,14 +275,14 @@ run_sim <- function(Tier_select_,
     # k <- 0
     # initialize
     
-    if(DC_include == 1 & k != -1){
-      penSim0$AL <- with(penSim0, AL + AL.DC)
-      penSim0$NC <- with(penSim0, NC + NC.DC)
-      penSim0$B  <- with(penSim0, B + B.DC)
-    }
-    
     penSim <- penSim0
     SC_amort <- SC_amort0
+    
+    if(DC_include == 1 & k != -1){
+      penSim$AL <- with(penSim, AL + AL.DC)
+      penSim$NC <- with(penSim, NC + NC.DC)
+      penSim$B  <- with(penSim, B + B.DC)
+    }
     
     if(k == -1) SC_amort[,] <- 0
     
@@ -396,9 +396,10 @@ run_sim <- function(Tier_select_,
       
       # Supplemental cost in j
       
+      
       if (amort_type == "pseudoClosed"){
 
-       if(k > 0){
+       if(k > 0 & if.reset == 1){
 
        # When using open amortization with diminishing amort period,
        # Set m equal to m.year1 in year 1, reset m to m.start when m reaches m.reset
@@ -407,7 +408,7 @@ run_sim <- function(Tier_select_,
         }
        }
 
-       if(k <= 0){
+       if(k <= 0 | if.reset == 0){
 
          # For test simulation (k = -1) and deterministic simulation,
          # amortization period does not reset.
