@@ -19,12 +19,17 @@
 # 6. Selecting variables for the chosen actuarial method
 
 
+
+
+
+
+
 get_indivLab <- function(Tier_select_,
                          decrement.model_ = decrement.model,
                          salary_          = salary,
                          benefit_         = benefit,
                          benefit.disb_    = benefit.disb,
-                         # bfactor_         = bfactor,
+                         bfactor_         = bfactor,
                          mortality.post.model_ = mortality.post.model,
                          liab.ca_ = liab.ca,
                          liab.disb.ca_ = liab.disb.ca,
@@ -37,7 +42,7 @@ get_indivLab <- function(Tier_select_,
   # salary_          = salary
   # benefit_         = benefit
   # benefit.disb_    = benefit.disb
-  # # bfactor_         = bfactor
+  # bfactor_         = bfactor
   # init_terms_all_ = init_terms_all # get_tierData(init_terms_all, Tier_select)
   # Tier_select_     = "t1"
   # mortality.post.model_ = mortality.post.model
@@ -593,7 +598,7 @@ PV.annuity.disb <- rbind(
            age      >= age.disb,
            start.year + (age.disb - ea) >= init.year + 1, # retire after year 2, LHS is the year of retirement
            start.year + age - ea        >= init.year + 1) # not really necessary since we already have age >= age.disb
-) %>% 
+) %>%
   data.table(key = "start.year,ea,age.disb,age")
 
 PV.annuity.disb <- PV.annuity.disb[!duplicated(PV.annuity.disb %>% select(start.year, ea, age, age.disb))]
@@ -618,76 +623,13 @@ PV.annuity.disb %<>%
   group_by(start.year, age.disb, ea) %>% 
   mutate(
     year.disb   = start.year + age.disb - ea, # year of disability
-    Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb),
-    BwCOLA.disb     = ifelse(year.disb == 2015, 0, get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300)),
-    APV.BwCOLA.disb = ifelse(year.disb == 2015, 0, get_rollingAPV(BwCOLA.disb, pxm.d, i))  # rolling actuarial PV from the year of retirement
+    Bx.disb     = ifelse(year.disb > init.year, Bx, benefit),
+    BwCOLA.disb = get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300),
+    APV.BwCOLA.disb = get_rollingAPV(BwCOLA.disb, pxm.d, i)  # rolling actuarial PV from the year of retirement
   ) 
-  # DEBUG NEEDED!!!
 
-# x <- PV.annuity.disb %>% 
-#   group_by(start.year, age.disb, ea) %>%
-#   #filter(year.disb > 2015, age.disb >0 , ea >0) %>% 
-#   mutate(
-#     year.disb   = start.year + age.disb - ea) %>% # year of disability
-#   filter(year.disb == 2014) %>% 
-#   mutate(
-#     Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb),
-#     BwCOLA.disb = get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300),
-#     APV.BwCOLA.disb = get_rollingAPV(BwCOLA.disb, pxm.d, i)  # rolling actuarial PV from the year of retirement
-#   ) 
+PV.annuity.disb %>% filter(start.year == 2016, ea == 30, age.disb == 40)
 
-# PV.annuity.disb1 <- PV.annuity.disb %>%
-#   group_by(start.year, age.disb, ea) %>%
-#   mutate(year.disb   = start.year + age.disb - ea) #%>%
-#   #filter(year.disb < 2015)
-
-
-
-
-# PV.annuity.disb %>% head
-
-
-# PV.annuity.disb %>% filter(start.year == 2016, ea == 30, age.disb == 40)
-
-
-# Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
-
-liab.active %<>%   
-left_join(PV.annuity.disb %>% ungroup %>%  filter(age == age.disb) %>% select(-age.disb, -Bx, -benefit.disb, -year.disb)) %>% 
-mutate( gx.disb  = 1,
-        Bx.disb  = gx.disb * Bx, 
-
-        APV.BwCOLA.disb = gx.disb * APV.BwCOLA.disb, # set PV of benefit for 0 for ineligible age/yos.
-        TCx.disb.la     = lead(APV.BwCOLA.disb) * qxd.la * v,
-        TCx.disb.laca   = TCx.disb.la,
-        
-        # This is the benefit level if the employee starts to CLAIM benefit at age x, not internally retire at age x. 
-        # TCx.disb.la = lead(Bx.disb) * qxd.la * lead(ax.disb.la) * v, # term cost of life annuity at the internal retirement age x (start to claim benefit at age x + 1)
-        # TCx.disb.ca = lead(Bx.disb) * qxd.ca * lead(liab.disb.ca.sum.1) * v,
-        # TCx.disb.laca = TCx.disb.la + TCx.disb.ca,
-        
-        # TCx.r = Bx.r * qxr.a * ax,
-        PVFBx.disb  = c(get_PVFB(pxT[age <= r.max], v, TCx.disb.laca[age <= r.max]), rep(0, max.age - r.max)),
-      
-        ## NC and AL of UC
-        # TCx.r1 = gx.r * qxe * ax,  # term cost of $1's benefit
-        # NCx.UC = bx * c(get_NC.UC(pxT[age <= r.max], v, TCx.r1[age <= r.max]), rep(0, 45)),
-        # ALx.UC = Bx * c(get_PVFB(pxT[age <= r.max], v, TCx.r1[age <= r.max]), rep(0, 45)),
-        
-        # # NC and AL of PUC
-        # TCx.rPUC = ifelse(age == min(age), 0, (Bx / (age - min(age)) * gx.r * qxr.a * ax.r)), # Note that this is not really term cost 
-        # NCx.PUC = c(get_NC.UC(pxT[age <= r.max], v, TCx.rPUC[age <= r.max]),  rep(0, max.age - r.max)),
-        # ALx.PUC = c(get_AL.PUC(pxT[age <= r.max], v, TCx.rPUC[age <= r.max]), rep(0, max.age - r.max)),
-        
-        # NC and AL of EAN.CD
-        NCx.EAN.CD.disb = ifelse(age < r.max, PVFBx.disb[age == min(age)]/ayx[age == r.max], 0),
-        ALx.EAN.CD.disb = PVFBx.disb - NCx.EAN.CD.disb * axR,
-        
-        # NC and AL of EAN.CP
-        
-        NCx.EAN.CP.disb   = ifelse(age < r.max, sx * PVFBx.disb[age == min(age)]/(sx[age == min(age)] * ayxs[age == r.max]), 0),
-        PVFNC.EAN.CP.disb = NCx.EAN.CP.disb * axRs,
-        ALx.EAN.CP.disb   = PVFBx.disb - PVFNC.EAN.CP.disb)
  
 
 

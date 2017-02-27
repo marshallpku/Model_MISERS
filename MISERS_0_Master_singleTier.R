@@ -142,7 +142,6 @@ gc()
 
 liab <- get_indivLab(Tier_select)
 
-
 # liab$active %>% select(year, ea, age, COLA.scale) %>% arrange(ea, age) %>% head(100)
 
 
@@ -180,7 +179,6 @@ penSim_results <- run_sim(Tier_select, AggLiab, liab.DC)
 #*********************************************************************************************************
 # 7  Showing results ####
 #*********************************************************************************************************
-
 
 var_display1 <- c("Tier", "sim", "year", "FR_MA", "MA", "AL", 
                   "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB", "B",

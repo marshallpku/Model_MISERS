@@ -178,6 +178,7 @@ get_BwCOLA <- function(init.B, age_range, cola_rate, compound, annual_max = NULL
   
   df_B <- data.frame(age = age_range, B = 0)
   
+  if(is.na(init.B)) return(df_B)
   
   if(is.null(annual_max)){
     df_B %<>% 
