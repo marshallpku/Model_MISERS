@@ -293,7 +293,28 @@ run_sim <- function(Tier_select_,
     for (j in 1:nyear){
       
       #j <- 2
-
+# 
+#       if(j == 1) {penSim$MA[j]  <- ifelse(k == -1, penSim$AL[j],                   # k = -1 is for testing model consistency
+#                                           switch(init_MA, 
+#                                                  MA = MA_0,                        # Use preset value
+#                                                  AL = penSim$AL[j],                # Assume inital fund equals inital liability.
+#                                                  AL_pct = penSim$AL[j] * MA_0_pct) # Inital MA is a proportion of inital AL
+#       ) 
+#       penSim$EAA[j] <- switch(init_EAA,
+#                               AL = EAA_0,                       # Use preset value 
+#                               MA = penSim$MA[j])                # Assume inital EAA equals inital market value.
+#       
+#       penSim$AA[j]  <- ifelse(init_AA == "AL_pct" & k != -1, penSim$AL[j] * AA_0_pct, 
+#                               ifelse(init_AA == "AA0" & k != -1, AA_0,
+#                                      switch(smooth_method,
+#                                             method1 =  with(penSim, MA[j]),   # we may want to allow for a preset initial AA.
+#                                             method2 =  with(penSim, (1 - w) * EAA[j] + w * MA[j])
+#                                      ) 
+#                               )
+#       )
+#       }
+      
+      
 
       # MA(j) and EAA(j) 
       if(j == 1) {penSim$MA[j]  <- ifelse(k == -1, penSim$AL[j],                   # k = -1 is for testing model consistency
@@ -306,13 +327,14 @@ run_sim <- function(Tier_select_,
                                          AL = EAA_0,                       # Use preset value 
                                          MA = penSim$MA[j])                # Assume inital EAA equals inital market value.
                  
-                 penSim$AA[j]  <- ifelse(init_AA == "AL_pct" & k != -1, 
-                                          penSim$AL[j] * AA_0_pct,
-                                          switch(smooth_method,
-                                                 method1 =  with(penSim, MA[j]),   # we may want to allow for a preset initial AA.
-                                                 method2 =  with(penSim, (1 - w) * EAA[j] + w * MA[j])
+                 penSim$AA[j]  <- ifelse(init_AA == "AL_pct" & k != -1, penSim$AL[j] * AA_0_pct,
+                                         ifelse(init_AA == "AA0" & k != -1, AA_0,
+                                                switch(smooth_method,
+                                                       method1 =  with(penSim, MA[j]),   # we may want to allow for a preset initial AA.
+                                                       method2 =  with(penSim, (1 - w) * EAA[j] + w * MA[j])
+                                                )
                                           )
-      )
+                                          )     
       } else {
         penSim$MA[j]  <- with(penSim, MA[j - 1] + I.r[j - 1] + C[j - 1] - B[j - 1])
         penSim$EAA[j] <- with(penSim, AA[j - 1] + I.e[j - 1] + C[j - 1] - B[j - 1])

@@ -46,17 +46,16 @@ get_indivLab <- function(Tier_select_,
   # paramlist_       =  paramlist
   # Global_paramlist_ =  Global_paramlist
 
-
 assign_parmsList(Global_paramlist_, envir = environment()) # environment() returns the local environment of the function.
 assign_parmsList(paramlist_,        envir = environment())
 
 # Choosing tier specific parameters and data
-# fasyears <- tier.param[Tier_select_, "fasyears"]
-# r.vben   <- tier.param[Tier_select_, "r.vben"]
-# r.yos    <- tier.param[Tier_select_, "r.yos"]
-# r.age    <- tier.param[Tier_select_, "r.age"]
-# v.yos    <- tier.param[Tier_select_, "v.yos"]
-# cola     <- tier.param[Tier_select_, "cola"]
+  # fasyears <- tier.param[Tier_select_, "fasyears"]
+  # r.vben   <- tier.param[Tier_select_, "r.vben"]
+  # r.yos    <- tier.param[Tier_select_, "r.yos"]
+  # r.age    <- tier.param[Tier_select_, "r.age"]
+  # v.yos    <- tier.param[Tier_select_, "v.yos"]
+  # cola     <- tier.param[Tier_select_, "cola"]
 
 init_terminated_ <-  get_tierData(init_terms_all_, Tier_select_)
 
@@ -602,58 +601,61 @@ PV.annuity.disb <- PV.annuity.disb[!duplicated(PV.annuity.disb %>% select(start.
 
 PV.annuity.disb <-  
   merge(PV.annuity.disb,
-        select(liab.active, start.year, ea, age, Bx, pxm.d) %>% data.table(key = "ea,age,start.year"),
+        select(liab.active, start.year, ea, age, Bx) %>% data.table(key = "ea,age,start.year"),
         all.x = TRUE, 
         by = c("ea", "age","start.year")) %>%
+  merge(
+        select(decrement.model_, ea, age, pxm.d) %>% data.table(key = "ea,age"),
+        all.x = TRUE, 
+        by = c("ea", "age")) %>%
   arrange(start.year, ea, age.disb) %>% 
   as.data.frame %>% 
   left_join(benefit.disb_) 
 
 
-#PV.annuity %>% filter(age == age.r) %>% head(20)
-#PV.annuity %>% filter(start.year == 2000, age.r == 50, ea == 30) %>% head
+# PV.annuity.disb %<>% 
+#   group_by(start.year, age.disb, ea) %>% 
+#   mutate(
+#     year.disb   = start.year + age.disb - ea, # year of disability
+#     Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb),
+#     BwCOLA.disb     = ifelse(year.disb == init.year, 0, get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300)),
+#     APV.BwCOLA.disb = ifelse(year.disb == init.year, 0, get_rollingAPV(BwCOLA.disb, pxm.d, i))  # rolling actuarial PV from the year of retirement
+#   ) 
 
 
 PV.annuity.disb %<>% 
   group_by(start.year, age.disb, ea) %>% 
   mutate(
     year.disb   = start.year + age.disb - ea, # year of disability
-    Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb),
-    BwCOLA.disb     = ifelse(year.disb == 2015, 0, get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300)),
-    APV.BwCOLA.disb = ifelse(year.disb == 2015, 0, get_rollingAPV(BwCOLA.disb, pxm.d, i))  # rolling actuarial PV from the year of retirement
+    Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb) %>% na2zero(),  # na2zero() needed to avoid an error for year.disb == 2017
+    BwCOLA.disb     = get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300),
+    APV.BwCOLA.disb = get_rollingAPV(BwCOLA.disb, pxm.d, i)  # rolling actuarial PV from the year of retirement
   ) 
   # DEBUG NEEDED!!!
 
-# x <- PV.annuity.disb %>% 
+
+
+
+# x <- PV.annuity.disb %>%
 #   group_by(start.year, age.disb, ea) %>%
-#   #filter(year.disb > 2015, age.disb >0 , ea >0) %>% 
+#   #filter(year.disb > 2015, age.disb >0 , ea >0) %>%
 #   mutate(
 #     year.disb   = start.year + age.disb - ea) %>% # year of disability
-#   filter(year.disb == 2014) %>% 
+#   filter(year.disb == 2017) %>%
 #   mutate(
-#     Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb),
+#     Bx.disb     = ifelse(year.disb > init.year, Bx, benefit.disb) %>% na2zero()  ) %>% 
+#   mutate(
 #     BwCOLA.disb = get_BwCOLA(Bx.disb[age == age.disb], min(age):max(age), cola, F, 300),
 #     APV.BwCOLA.disb = get_rollingAPV(BwCOLA.disb, pxm.d, i)  # rolling actuarial PV from the year of retirement
-#   ) 
-
-# PV.annuity.disb1 <- PV.annuity.disb %>%
-#   group_by(start.year, age.disb, ea) %>%
-#   mutate(year.disb   = start.year + age.disb - ea) #%>%
-#   #filter(year.disb < 2015)
+#   )
 
 
-
-
-# PV.annuity.disb %>% head
-
-
-# PV.annuity.disb %>% filter(start.year == 2016, ea == 30, age.disb == 40)
 
 
 # Calculate normal costs and liabilities of retirement benefits with multiple retirement ages  
 
 liab.active %<>%   
-left_join(PV.annuity.disb %>% ungroup %>%  filter(age == age.disb) %>% select(-age.disb, -Bx, -benefit.disb, -year.disb)) %>% 
+left_join(PV.annuity.disb %>% ungroup %>%  filter(age == age.disb) %>% select(-age.disb, -Bx, -benefit.disb, -year.disb, -pxm.d)) %>% 
 mutate( gx.disb  = 1,
         Bx.disb  = gx.disb * Bx, 
 
@@ -824,5 +826,8 @@ liab <- list(active = liab.active,
 #                      benefit,
 #                      bfactor,
 #                      init_terminated.t76)
+
+
+
 
 

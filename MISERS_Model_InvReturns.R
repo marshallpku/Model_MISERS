@@ -40,7 +40,7 @@ gen_returns <- function( paramlist_ = paramlist,
   
 
 
-i.r <- cbind(rep(i, nyear),                  # Check consistency
+i.r <- cbind(rep(i, nrow(i.r)),                  # Check consistency
              #rep(ir.mean - ir.sd^2/2, nyear), # Deterministic run
              i.r)
 colnames(i.r) <- c(-1:nsim)

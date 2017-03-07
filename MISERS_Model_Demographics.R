@@ -96,9 +96,11 @@ newDisb.act <- numeric(nyear)
 # 
 wf_active[, , 1]   <- init_pop_$actives 
 wf_la[, , 1, 1]    <- init_pop_$retirees
-wf_term[, , 1, 1]  <- init_pop_$terms   # note that the initial terms are assigned to year.term = init.year - 1
+wf_term[, , 1, 1]  <- init_pop_$terms     # note that the initial terms are assigned to year.term = init.year - 1
 wf_disb.la[, , 1, 1]  <- init_pop_$disb
 # 
+
+
 
 
 #*************************************************************************************************************

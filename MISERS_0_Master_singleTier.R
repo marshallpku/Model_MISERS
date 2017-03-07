@@ -4,9 +4,9 @@ gc()
 Tier_select <- "t1"
 
 
-# Calibration ####
 
-paramlist$bfactor <- 0.0165
+
+
 
 
 
@@ -86,7 +86,24 @@ mortality.post.model <- list.decrements$mortality.post.model
 # if(!paramlist$useExtFund) extFund %<>% mutate_each(funs(. * 0), -year)
 
 
+# Calibration ####
+paramlist$bfactor <- 0.0165
 
+# For model starting 2017
+load("save2017_closed.RData")
+
+if (paramlist$init.year.override == 2017){
+
+init_actives_all     <- init_actives_all_2017  
+init_retirees.la_all <- init_retirees.la_all_2017
+init_disb.la_all     <- init_disb.la_all_2017
+init_terms_all       <- init_terms_all_2017
+
+}
+
+
+# init_retirees.la_all
+# init_disb.la_all 
 
 #*********************************************************************************************************
 # 1.3  Actual investment return, for all tiers ####
@@ -101,15 +118,25 @@ i.r <- gen_returns()
 # 1.2 Create plan data ####
 #*********************************************************************************************************
 
+# initial value needed for sim starting in 2017
+
+# init_actives_all
+# init_retirees.la_all
+# init_retirees.ca_all
+# 
+# init_disb.la_all
+# init_disb.ca_all
+# 
+# init_terms_all
+
+
 source("MISERS_Model_PrepData.R")
 
-salary       <- get_salary_proc(Tier_select)
-benefit      <- get_benefit_tier(Tier_select)
-benefit.disb <- get_benefit.disb_tier(Tier_select)
-init_pop     <- get_initPop_tier(Tier_select)
+salary         <- get_salary_proc(Tier_select)
+benefit        <- get_benefit_tier(Tier_select)
+benefit.disb   <- get_benefit.disb_tier(Tier_select)
+init_pop       <- get_initPop_tier(Tier_select)
 entrants_dist  <- get_entrantsDist_tier("t1")
-
- 
 
 
 
@@ -182,6 +209,8 @@ AggLiab <- get_AggLiab(Tier_select,
 source("MISERS_Model_Sim.R")
 penSim_results <- run_sim(Tier_select, AggLiab, liab.DC)
 
+# paramlist$MA_0 <- 11397362049
+# paramlist$AA_0 <- 11422640330
 
 
 
@@ -190,7 +219,7 @@ penSim_results <- run_sim(Tier_select, AggLiab, liab.DC)
 #*********************************************************************************************************
 
 var_display1 <- c("Tier", "sim", "year", "FR_MA", "MA", "AL", 
-                  "AL.act", "AL.act.laca", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB", "B",
+                  "AL.act", "AL.disb.la", "AL.act.disb", "AL.act.death", "AL.act.v", "AL.la", "AL.ca", "AL.term", "PVFB", "B",
                   # "AL.disb.la", "AL.disb.ca", "AL.death", "PVFB",
                   #"PVFB.laca", "PVFB.LSC", "PVFB.v", "PVFB", 
                   # "B", "B.la", "B.ca", "B.v", "B.disb.la","B.disb.ca", 
@@ -202,25 +231,27 @@ var_display2 <- c("Tier", "sim", "year", "FR_MA", "MA", "AL", "EEC","ERC","ERC_P
                   "ndisb.la", "ndisb.ca.R1", "ndisb.ca.R0S1" )
 
 
-var_display.cali <- c("runname", "sim", "year", "FR", "MA", "AA", "AL", 
-                      "AL.act",
+var_display.cali <- c("runname", "sim", "year", "FR","FR_MA", "MA", "AA", "AL", 
+                      "AL.act", "AL.disb.la", "AL.term",
                       "PVFB", 
                       "B", # "B.la", "B.ca", "B.disb.la","B.disb.ca", 
                       # "C",   
                       "NC","SC", "ERC", "EEC",
-                      "PR",
+                      "PR", "nactives", "nla",
                       "NC_PR", "ERC_PR",
                       "UAAL", "AL.DC", "NC.DC", "B.DC")
 
 
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display1)) %>% print
-penSim_results %>% filter(sim == -1) %>% select(one_of(var_display2)) %>% print
+penSim_results %>% filter(sim == 0) %>% select(one_of(var_display2))  %>% print
 
 # Calibration
 penSim_results %>% filter(sim == -1) %>% select(one_of(var_display.cali)) %>% print
 penSim_results %>% filter(sim == 0)  %>% select(one_of(var_display.cali)) %>% print
 
-penSim_results %>% filter(sim == 1)  %>% select(one_of(var_display.cali)) %>% print
+
+
+# penSim_results %>% filter(sim == 1)  %>% select(one_of(var_display.cali)) %>% print
 
 
 df_all.stch <- penSim_results  %>% 
@@ -269,6 +300,7 @@ df_all.stch %<>%
 
 df_all.stch
 
+#x <- pop$disb.la %>% filter(year == 2017)
 
 
 
