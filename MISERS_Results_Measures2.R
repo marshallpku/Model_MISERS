@@ -239,7 +239,7 @@ results_all %>% filter(runname == "RS1.closed", sim > 0) %>%
 #*****************************************************
 
 df_det <- results_all  %>% 
-  filter(runname == "RS1.closed", sim == 0, year <= 2045) %>% 
+  filter(runname == "RS1.open", sim == 0, year <= 2045) %>% 
   select(year, AL, MA, B, C, ERC, EEC, ExF, FR_MA, ERC_PR, NC_PR, ERC_GF, ExF_MA, MA_PR) %>% 
   mutate_at(vars(-year, -FR_MA, -ERC_PR, -ExF_MA, -MA_PR, -NC_PR, -ERC_GF), funs(./1e6)) %>% 
   mutate(MA_PR = MA_PR/100) 
@@ -441,7 +441,7 @@ fig_stchDet.ERChigh
 # Distribution of funded ratio 
 fig.title <- "Distribution of funded ratios across simulations"
 fig.subtitle <- "Assumption achieved: expected compound return = 8%"
-fig_RS.FRdist <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.closed")) %>% 
+fig_RS.FRdist <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS2.closed", "RS3.closed")) %>% 
   # left_join(results_all  %>% 
   #             filter(runname %in% c("RS2.closed", "RS3.closed"), sim == 0) %>% 
   #             select(runname, year, FR_det = FR_MA)) %>%  
@@ -475,7 +475,7 @@ fig_RS.FRdist
 # Distribution of ERC as % general fund
 fig.title <- "Distribution of employer contribution rates across simulations"
 fig.subtitle <- "Assumption achieved: expected compound return = 8%"
-fig_RS.ERCdist <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.closed")) %>% 
+fig_RS.ERCdist <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS2.closed", "RS3.closed")) %>% 
   # left_join(results_all  %>% 
   #             filter(runname  %in% c("RS2.closed", "RS3.closed"), sim == 0) %>% 
   #             select(runname, year, ERC_det = ERC_GF)) %>% 
@@ -508,7 +508,7 @@ fig_RS.ERCdist
 # Risk of low funded ratio
 fig.title <- "Probability of funded ratio below 40% in any year up to the given year"
 fig.subtitle <- "Assumption achieved; expected compound return = 8%"
-fig_RS.FR40less <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.closed")) %>% 
+fig_RS.FR40less <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS2.closed", "RS3.closed")) %>% 
   select(runname, year, FR40less) %>% 
   #mutate(FR40less.det = 0) %>% 
   #gather(variable, value, -year) %>% 
@@ -517,10 +517,10 @@ fig_RS.FR40less <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.clos
   coord_cartesian(ylim = c(0,30)) + 
   scale_y_continuous(breaks = seq(0,200, 5)) +
   scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
-  scale_color_manual(values = c(RIG.red,RIG.blue),  name = "", 
-                     label  = c("15 years of low returns", "High volatility")) + 
-  scale_shape_manual(values = c(17,16),  name = "", 
-                     label  = c("15 years of low returns", "High volatility")) +
+  scale_color_manual(values = c(RIG.green, RIG.red,RIG.blue),  name = "", 
+                     label  = c("Base case: \nassumption achieved",  "15 years of low returns", "High volatility")) + 
+  scale_shape_manual(values = c(15, 17,16),  name = "", 
+                     label  = c("Base case: \nassumption achieved", "15 years of low returns", "High volatility")) +
   labs(title = fig.title,
        subtitle = fig.subtitle,
        x = NULL, y = "Probability (%)") + 
@@ -531,7 +531,7 @@ fig_RS.FR40less
 # Risk of sharp increase in ERC/GF
 fig.title <- "Probability of employer contribution rising more than 5% of general fund \nin a 5-year period at any time prior to and including the given year"
 fig.subtitle <- "Assumption achieved; expected compound return = 8%"
-fig_RS.ERChike <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.closed")) %>% 
+fig_RS.ERChike <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS2.closed", "RS3.closed")) %>% 
   select(runname, year, ERC_hike) %>% 
   #mutate(ERChike.det = 0) %>% 
   #gather(variable, value, - year) %>% 
@@ -540,10 +540,10 @@ fig_RS.ERChike <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.close
   coord_cartesian(ylim = c(0,50)) + 
   scale_y_continuous(breaks = seq(0,200, 5)) +
   scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
-  scale_color_manual(values = c(RIG.red,RIG.blue),  name = "", 
-                     label  = c("15 years of low returns", "High volatility")) + 
-  scale_shape_manual(values = c(17,16),  name = "", 
-                     label  = c("15 years of low returns", "High volatility")) +
+  scale_color_manual(values = c(RIG.green, RIG.red, RIG.blue),  name = "", 
+                     label  = c("Base case: \nassumption achieved", "15 years of low returns", "High volatility")) + 
+  scale_shape_manual(values = c(15, 17,16),  name = "", 
+                     label  = c("Base case: \nassumption achieved", "15 years of low returns", "High volatility")) +
   labs(title = fig.title,
        subtitle = fig.subtitle,
        x = NULL, y = "Probability (%)") + 
@@ -554,7 +554,7 @@ fig_RS.ERChike
 # Risk of high increase in ERC/GF
 fig.title <- "Probability of employer contribution rising above 10% of general fund \nat any time prior to and including the given year"
 fig.subtitle <- "Assumption achieved; expected compound return = 8%"
-fig_RS.ERChigh <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.closed")) %>% 
+fig_RS.ERChigh <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS2.closed", "RS3.closed")) %>% 
   select(runname, year, ERC_high) %>% 
   #mutate(ERChike.det = 0) %>% 
   #gather(variable, value, - year) %>% 
@@ -563,10 +563,10 @@ fig_RS.ERChigh <- df_all.stch %>% filter(runname %in% c("RS2.closed", "RS3.close
   coord_cartesian(ylim = c(0,50)) + 
   scale_y_continuous(breaks = seq(0,200, 5)) +
   scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
-  scale_color_manual(values = c(RIG.red,RIG.blue),  name = "", 
-                     label  = c("15 years of low returns", "High volatility")) + 
-  scale_shape_manual(values = c(17,16),  name = "", 
-                     label  = c("15 years of low returns", "High volatility")) +
+  scale_color_manual(values = c(RIG.green, RIG.red,RIG.blue),  name = "", 
+                     label  = c("Base case: \nassumption achieved", "15 years of low returns", "High volatility")) + 
+  scale_shape_manual(values = c(15, 17,16),  name = "", 
+                     label  = c("Base case: \nassumption achieved", "15 years of low returns", "High volatility")) +
   labs(title = fig.title,
        subtitle = fig.subtitle,
        x = NULL, y = "Probability (%)") + 
@@ -581,9 +581,67 @@ fig_RS.ERChigh
 ##  Lowering DC to 7.5%, true expected return = 7.5% ####
 #**********************************************************************
 
+# Deterministic runs
+
+results_dc <- results_all %>%  
+  filter(year %in% 2016:2046, runname %in% c("RS4.closed", "RS5.closed"), sim == 0) %>% 
+  select(runname, year, FR_MA, MA, AL, AL.closed.8pct, ERC_GF, ERC) %>% 
+  mutate(FR_MA.8pct = 100* MA / AL.closed.8pct)
+  
+
+
+
+fig.title <- "Funded ratios under different assumed rate of returns"
+fig.subtitle <- "Deterministic annual return of 7.5%"
+fig_DC.DetERC <- 
+results_dc %>% 
+  ggplot(aes(x = year, y = ERC_GF, color = runname, shape = runname)) + 
+  geom_line() + 
+  geom_point(size = 2) + 
+  coord_cartesian(ylim = c(0,6)) + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 500, 0.5)) + 
+  scale_color_manual(values = c(RIG.green, RIG.blue, RIG.red, "black"),  name = NULL,
+                     label = c("Assumed return  = 8%", "Assumed return = 7.5%")) + 
+  scale_shape_manual(values = c(15, 16, 17, 18),  name = NULL,
+                     label = c("Assumed return  = 8%", "Assumed return = 7.5%")) +
+  labs(title = fig.title,
+       subtitle = fig.subtitle,
+       x = NULL, y = "Percent") + 
+  theme(axis.text.x = element_text(size = 8)) +
+  theme_bw() +
+  RIG.theme()
+fig_DC.DetERC
+
+
+fig.title <- "Employer contribution as a percentage of general fund revnue \nunder different assumed rate of returns"
+fig.subtitle <- "Deterministic annual return of 7.5%"
+fig_DC.DetFR <- 
+results_dc %>% 
+  ggplot(aes(x = year, y = FR_MA.8pct, color = runname, shape = runname)) + 
+  geom_line() + 
+  geom_point(size = 2) + 
+  coord_cartesian(ylim = c(0,110)) + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 500, 10)) + 
+  scale_color_manual(values = c(RIG.green, RIG.blue, RIG.red, "black"),  name = NULL,
+                     label = c("Assumed return  = 8%", "Assumed return = 7.5%")) + 
+  scale_shape_manual(values = c(15, 16, 17, 18),  name = NULL,
+                     label = c("Assumed return  = 8%", "Assumed return = 7.5%")) +
+  labs(title = fig.title,
+       subtitle = fig.subtitle,
+       x = NULL, y = "Percent") + 
+  theme(axis.text.x = element_text(size = 8)) +
+  theme_bw() +
+  RIG.theme()
+fig_DC.DetFR
+
+
+
+
 # Distribution of funded ratio 
 fig.title <- "Distribution of funded ratios across simulations"
-fig.subtitle <- "Assumption achieved: expected compound return = 8%"
+fig.subtitle <- "Expected compound return = 7.5%"
 fig_DC.FRdist <- df_all.stch %>% filter(runname %in% c("RS4.closed", "RS5.closed")) %>% 
   # left_join(results_all  %>% 
   #             filter(runname %in% c("RS2.closed", "RS3.closed"), sim == 0) %>% 
@@ -617,7 +675,7 @@ fig_DC.FRdist
 
 # Distribution of ERC as % general fund
 fig.title <- "Distribution of employer contribution rates across simulations"
-fig.subtitle <- "Assumption achieved: expected compound return = 8%"
+fig.subtitle <- "Expected compound return = 7.5%"
 fig_DC.ERCdist <- df_all.stch %>% filter(runname %in% c("RS4.closed", "RS5.closed")) %>% 
   # left_join(results_all  %>% 
   #             filter(runname  %in% c("RS2.closed", "RS3.closed"), sim == 0) %>% 
@@ -650,7 +708,7 @@ fig_DC.ERCdist
 
 # Risk of low funded ratio
 fig.title <- "Probability of funded ratio below 40% in any year up to the given year"
-fig.subtitle <- "Assumption achieved; expected compound return = 8%"
+fig.subtitle <- "Expected compound return = 7.5%"
 fig_DC.FR40less <- df_all.stch %>% filter(runname %in% c("RS4.closed", "RS5.closed")) %>% 
   select(runname, year, FR40less) %>% 
   #mutate(FR40less.det = 0) %>% 
@@ -673,7 +731,7 @@ fig_DC.FR40less
 
 # Risk of sharp increase in ERC/GF
 fig.title <- "Probability of employer contribution rising more than 5% of general fund \nin a 5-year period at any time prior to and including the given year"
-fig.subtitle <- "Assumption achieved; expected compound return = 8%"
+fig.subtitle <- "Expected compound return = 7.5%"
 fig_DC.ERChike <- df_all.stch %>% filter(runname %in% c("RS4.closed", "RS5.closed")) %>% 
   select(runname, year, ERC_hike) %>% 
   #mutate(ERChike.det = 0) %>% 
@@ -696,7 +754,7 @@ fig_DC.ERChike
 
 # Risk of high increase in ERC/GF
 fig.title <- "Probability of employer contribution rising above 10% of general fund \nat any time prior to and including the given year"
-fig.subtitle <- "Assumption achieved; expected compound return = 8%"
+fig.subtitle <- "Expected compound return = 7.5%"
 fig_DC.ERChigh <- df_all.stch %>% filter(runname %in% c("RS4.closed", "RS5.closed")) %>% 
   select(runname, year, ERC_high) %>% 
   #mutate(ERChike.det = 0) %>% 
@@ -731,6 +789,10 @@ g.width.1col  <- 10*0.8
 g.height.2col <- 6*0.8
 g.width.2col  <- 13*0.8
 
+g.height.3col <- 5*0.8
+g.width.3col  <- 15*0.8
+
+
 
 ggsave(file = paste0(Outputs_folder, "distReturn.png"),   fig_distReturn, height = 7*0.8, width = 10*0.8)
 
@@ -744,23 +806,32 @@ ggsave(file = paste0(Outputs_folder, "stchDet.ERChigh.png"),  fig_stchDet.ERChig
 
 
 # low returns and high volatility
-ggsave(file = paste0(Outputs_folder, "RS.FRdist.png"),   fig_RS.FRdist,  height = g.height.2col, width = g.width.2col)
-ggsave(file = paste0(Outputs_folder, "RS.ERCdist.png"),  fig_RS.ERCdist, height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "RS.FRdist.png"),   fig_RS.FRdist,  height = g.height.3col, width = g.width.3col)
+ggsave(file = paste0(Outputs_folder, "RS.ERCdist.png"),  fig_RS.ERCdist, height = g.height.3col, width = g.width.3col)
 
-ggsave(file = paste0(Outputs_folder, "RS.FR40less.png"), fig_RS.FR40less, height = g.height.2col, width = g.width.2col)
-ggsave(file = paste0(Outputs_folder, "RS.ERChike.png"),  fig_RS.ERChike,  height = g.height.2col, width = g.width.2col)
-ggsave(file = paste0(Outputs_folder, "RS.ERChigh.png"),  fig_RS.ERChigh,  height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "RS.FR40less.png"), fig_RS.FR40less, height = g.height.2col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "RS.ERChike.png"),  fig_RS.ERChike,  height = g.height.2col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "RS.ERChigh.png"),  fig_RS.ERChigh,  height = g.height.2col, width = g.width.1col)
 
 
 # Lowering discount rate
+
+ggsave(file = paste0(Outputs_folder, "DC.DetERC.png"), fig_DC.DetERC,  height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "DC.DetFR.png"),  fig_DC.DetFR, height = g.height.1col, width = g.width.1col)
+
+
 ggsave(file = paste0(Outputs_folder, "DC.FRdist.png"),   fig_DC.FRdist,  height = g.height.2col, width = g.width.2col)
 ggsave(file = paste0(Outputs_folder, "DC.ERCdist.png"),  fig_DC.ERCdist, height = g.height.2col, width = g.width.2col)
 
-ggsave(file = paste0(Outputs_folder, "DC.FR40less.png"), fig_DC.FR40less, height = g.height.2col, width = g.width.2col)
-ggsave(file = paste0(Outputs_folder, "DC.ERChike.png"),  fig_DC.ERChike,  height = g.height.2col, width = g.width.2col)
-ggsave(file = paste0(Outputs_folder, "DC.ERChigh.png"),  fig_DC.ERChigh,  height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "DC.FR40less.png"), fig_DC.FR40less, height = g.height.2col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "DC.ERChike.png"),  fig_DC.ERChike,  height = g.height.2col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "DC.ERChigh.png"),  fig_DC.ERChigh,  height = g.height.2col, width = g.width.1col)
 
 
+
+
+
+fig_stchDet.ERChike
 
 
 
