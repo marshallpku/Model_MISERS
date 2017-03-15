@@ -1,4 +1,4 @@
-# Risk measures for LAFPP
+# Risk measures for MISERS
 
 library(knitr)
 library(data.table)
@@ -20,6 +20,7 @@ library("readxl")
 library("XLConnect") # slow but convenient because it reads ranges; NOTE: I had to install Java 64-bit on Windows 10 64-bit to load properly
 library(xlsx)
 library("btools")
+library("scales")
 
 source("Functions.R")
 
@@ -87,7 +88,8 @@ results_all %<>% left_join(df_AL.closed.8pct)
 load("GenFund_proj.RData")
 
 results_all %<>% left_join(df_revenue %>% select(year, GenFund = GenFund.proj)) %>% 
-  mutate(ERC_GF = 100 * ERC/GenFund)
+  mutate(ERC_GF = 100 * ERC/GenFund, 
+         AL_GF  = 100 * AL/GenFund)
 
 
 
@@ -151,13 +153,21 @@ runs_RS.open_labels <- c("Assumption Achieved, open plan",
                          "High volatility, open plan",
                          "7.5% returns, open plan")
 
+lab_s1 <- "Scenario 1 \nAssumption Achieved: \nClosed Plan"
+lab_s2 <- "Scenario 2 \nAssumption Achieved: \nOpen Plan"
+lab_s3 <- "Scenario 3 \n15 Years of Low Returns"
+lab_s4 <- "Scenario 4 \nHigh Volatility"
+lab_s5 <- "Scenario 5 \nCurrent Return Assumption"
+lab_s6 <- "Scenario 6 \nLower Return Assumption"
+
+
 runs_all <- c(runs_RS.closed, runs_RS.open)
 runs_all_labels <- c(runs_RS.closed_labels, runs_RS.open_labels)
 
 
 
 df_all.stch <- results_all  %>% 
-  filter(runname %in% runs_all, sim > 0, year <= 2045)
+  filter(runname %in% runs_all, sim > 0, year %in% 2016:2046)
 
 
 
@@ -182,6 +192,12 @@ df_all.stch %<>%
             FR.q75   = quantile(FR_MA, 0.75, na.rm = T),
             FR.q90   = quantile(FR_MA, 0.9, na.rm = T),
             
+            ERC.q10 = quantile(ERC/1e6, 0.1, na.rm = T),
+            ERC.q25 = quantile(ERC/1e6, 0.25, na.rm = T),
+            ERC.q50 = quantile(ERC/1e6, 0.5, na.rm = T),
+            ERC.q75 = quantile(ERC/1e6, 0.75, na.rm = T),
+            ERC.q90 = quantile(ERC/1e6, 0.9, na.rm = T),
+            
             ERC_GF.q10 = quantile(ERC_GF, 0.1, na.rm = T),
             ERC_GF.q25 = quantile(ERC_GF, 0.25, na.rm = T),
             ERC_GF.q50 = quantile(ERC_GF, 0.5, na.rm = T),
@@ -201,6 +217,8 @@ df_all.stch %<>%
 
 
 
+
+
 df_all.stch %>% filter(runname == "RS1.closed")
 df_all.stch %>% filter(runname == "RS1.open")
 
@@ -212,7 +230,10 @@ df_all.stch %>% filter(runname == "RS4.closed")
 df_all.stch %>% filter(runname == "RS5.closed")
 
 
-results_all %>% filter(runname == "RS1.closed", sim == 0, year %in% c(2015, 2016, 2030, 2045) ) %>% select(runname, Tier, year, AL, PR, NC,SC, EEC,ERC, GenFund, ERC) %>% mutate(AL_PR = AL/PR)
+results_all %>% filter(runname == "RS1.closed", sim == 0, year %in% c(2015, 2016, 2030:2045) ) %>% select(runname, Tier, year, AL, AL.DC, PR, NC, NC.DC,B,SC, EEC,ERC, GenFund, ERC, nactives)
+
+results_all %>% filter(runname == "RS1.closed", sim == 13 ) %>% select(runname,sim, Tier, year, AL, PR, NC,SC, EEC,ERC, GenFund, ERC, ERC_GF, i.r, UAAL, FR_MA) 
+results_all %>% filter(runname == "RS1.open",   sim == 13 ) %>% select(runname,sim, Tier, year, AL, PR, NC,SC, EEC,ERC, GenFund, ERC, ERC_GF, i.r, UAAL) 
 
 results_all %>% filter(runname == "RS4.closed", sim == 0, year %in% c(2016:2020) ) %>% select(runname, Tier, year, AL, PR, SC, ERC, GenFund, ERC_GF) %>% mutate(AL_PR = AL/PR)
 results_all %>% filter(runname == "RS5.closed", sim == 0, year %in% c(2016:2020) ) %>% select(runname, Tier, year, AL, PR, SC, ERC, GenFund, ERC_GF) %>% mutate(AL_PR = AL/PR)
@@ -256,6 +277,21 @@ results_all  %>%
   mutate(SC_PR = 100*SC/PR)
 
 
+
+fig_projGenFund <- 
+  results_all %>% filter(runname == "RS1.closed", sim == 0) %>% 
+  ggplot(aes(x = year, y = GenFund/1e6)) + 
+  geom_bar(stat = "identity", fill = "skyblue2", color = "grey50", width = 0.5) + 
+  theme_bw() + 
+  RIG.theme() + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 40000, 2000), labels = comma(seq(0, 40000, 2000))) + 
+  labs(title = "Projected General fund of the State of Michigan",
+       y = "$Million",
+       x = NULL)
+fig_projGenFund
+
+
 #*****************************************************
 ## Stochastic run: assumption achieved  ####
 #*****************************************************
@@ -278,38 +314,54 @@ fig_distReturn <- results_all %>%
 fig_distReturn
 
 
-# med.FR_MA <- (results_all %>% filter(runname == "RS1", sim > 0, year == 2045))$FR_MA %>% median
-# fig_distFR30 <- results_all %>% 
-#   filter(runname == "RS1", sim > 0, year == 2045) %>% 
-#   # group_by(sim) %>% 
-#   # summarize(geoReturn = get_geoReturn(i.r)) %>% 
-#   ggplot(aes(FR_MA)) + theme_bw() + 
-#   geom_histogram(color = "black", fill = RIG.blue, binwidth = 10, boundary = 0) + 
-#   geom_vline(xintercept = c(100, med.FR_MA), color = c(RIG.red,"blue"), size = 0.8) + 
-#   coord_cartesian(xlim = c(0, 400)) + 
-#   scale_x_continuous(breaks = seq(0,400,20))+
-#   labs(title = "Distribution of funded ratios in year 30 over 2,000 simulations",
-#        x = "%",
-#        y = "Simulatoin count") + 
-#   annotate("text", x = med.FR_MA + 50, y = 175, label = paste0("Median funded ratio in year 30: \n", round(med.FR_MA, 1), "%"),
-#            color = "blue", size = 3.5) + 
-#   RIG.theme()
-# fig_distFR30
+
+
+
+# Projected actuarial liability of MISERS
+fig.title <- "Projected actuarial liability of MISERS"
+fig.subtitle <- "Closed plan and open plan"
+fig_AL <- results_all %>% filter(runname %in% c("RS1.closed", "RS1.open"), year >=2016, sim == 1) %>% 
+  mutate(runname = factor(runname, labels = c(lab_s1, lab_s2))) %>%  
+  select(runname, year, AL) %>% 
+  ggplot(aes(x = year, y = AL/1e6, color = runname, shape = runname)) + theme_bw() + 
+  geom_line() + 
+  geom_point(size = 2) + 
+  coord_cartesian(ylim = c(0,20000)) + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 40000, 2000)) + 
+  scale_color_manual(values = c("black", RIG.red, RIG.red, "black"),  name = NULL 
+                     #label  = c("Closed plan", "Open plan")
+                     ) + 
+  scale_shape_manual(values = c(17, 16, 17, 18),  name = NULL
+                     #label  = c("Closed plan", "Open plan")
+                     ) +
+  labs(title = fig.title,
+       subtitle = fig.subtitle,
+       x = NULL, y = "$Million") + 
+  theme(axis.text.x = element_text(size = 8)) + 
+  guides(color = guide_legend(keywidth = 1.5, keyheight = 3))+
+  RIG.theme()
+
+fig_AL
+
+
+
 
 
 # Distribution of funded ratio 
 fig.title <- "Distribution of funded ratios across simulations"
 fig.subtitle <- "Assumption achieved: expected compound return = 8%"
-fig_stchDet.FRdist <- df_all.stch %>% filter(runname %in% c("RS1.closed")) %>% 
+fig_stchDet.FRdist <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
   left_join(results_all  %>% 
-              filter(runname == "RS1.closed", sim == 0) %>% 
-              select(year, FR_det = FR_MA)) %>%  
+              filter(runname  %in% c("RS1.closed", "RS1.open"), sim == 0) %>% 
+              select(runname, year, FR_det = FR_MA)) %>%  
   select(runname, year, FR.q25, FR.q50, FR.q75, FR_det) %>% 
   gather(type, value, -runname, -year) %>% 
   ggplot(aes(x = year, y = value,
              color = factor(type, levels = c("FR.q75", "FR.q50", "FR.q25", "FR_det")),
              shape = factor(type, levels = c("FR.q75", "FR.q50", "FR.q25", "FR_det"))
   )) + theme_bw() + 
+  facet_grid(.~runname) +
   geom_line() + 
   geom_point(size = 2) + 
   geom_hline(yintercept = 100, linetype = 2, size = 1) +
@@ -330,19 +382,122 @@ fig_stchDet.FRdist
 
 
 
+# Distribution of ERC ($ value)
+fig.title <- "Distribution of employer contributions ($Million) across simulations"
+fig.subtitle <- "Assumption achieved: expected compound return = 8%"
+fig_stchDet.ERC.USDdist <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
+  # left_join(results_all  %>% 
+  #             filter(runname  %in% c("RS1.closed", "RS1.open"), sim == 0) %>% 
+  #             select(runname, year, ERC_det = ERC) %>% 
+  #             mutate(ERC_det = ERC_det/1e6)) %>% 
+  select(runname, year, ERC.q25, ERC.q50, ERC.q75) %>% 
+  gather(type, value, -runname, -year) %>% 
+  mutate(runname = factor(runname, labels = c(lab_s1, lab_s2))) %>%  
+  ggplot(aes(x = year, y = value,
+             color = factor(type, levels = c("ERC.q75", "ERC.q50", "ERC.q25")),
+             shape = factor(type, levels = c("ERC.q75", "ERC.q50", "ERC.q25")))) + 
+  facet_grid(. ~ runname) + 
+  theme_bw() + 
+  geom_line() + 
+  geom_point(size = 2) + 
+  coord_cartesian(ylim = c(0,1200)) + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 50000, 100)) + 
+  scale_color_manual(values = c(RIG.red, RIG.blue, RIG.green, "black"),  name = NULL, 
+                     label  = c("75th percentile", "50th percentile", "25th percentile")) + 
+  scale_shape_manual(values = c(17, 16, 15, 18),  name = NULL, 
+                     label  = c("75th percentile", "50th percentile", "25th percentile")) +
+  labs(title = fig.title,
+       subtitle = fig.subtitle,
+       x = NULL, y = "$Million") + 
+  theme(axis.text.x = element_text(size = 8)) + 
+  RIG.theme()
+fig_stchDet.ERC.USDdist
+
+
+# Median ERC ($ value)
+fig.title <- "Median employer contributions ($million) across 2,000 simulations"
+fig.subtitle <- "Assumption achieved: expected compound return = 8; closed plan and open plan"
+fig_stchDet.ERC_Med <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
+  # left_join(results_all  %>% 
+  #             filter(runname  %in% c("RS1.closed", "RS1.open"), sim == 0) %>% 
+  #             select(runname, year, ERC_det = ERC) %>% 
+  #             mutate(ERC_det = ERC_det/1e6)) %>% 
+  select(runname, year, ERC.q50) %>% 
+  #gather(type, value, -runname, -year) %>% 
+  ggplot(aes(x = year, y = ERC.q50,
+             color = runname,
+             shape = runname)) + 
+  theme_bw() + 
+  geom_line() + 
+  geom_point(size = 2) + 
+  coord_cartesian(ylim = c(0,500)) + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 50000, 100)) + 
+  scale_color_manual(values = c("black", RIG.red),  name = NULL,
+                     label  = c("Scenario 1\nAssumption Achieved: \nClosed Plan", 
+                                "Scenario 2\nAssumption Achieved: \nOpen Plan")) + 
+  scale_shape_manual(values = c(17, 16, 15, 18),  name = NULL, 
+                     label  = c("Scenario 1\nAssumption Achieved: \nClosed Plan", 
+                                "Scenario 2\nAssumption Achieved: \nOpen Plan")) +
+  labs(title = fig.title,
+       subtitle = fig.subtitle,
+       x = NULL, y = "$Million") + 
+  theme(axis.text.x = element_text(size = 8)) + 
+  guides(color = guide_legend(keywidth = 1.5, keyheight = 3))+
+  RIG.theme()
+fig_stchDet.ERC_Med
+
+
+# Median ERC ($ value)
+fig.title <- "Median employer contributions as percentage of the projected general fund \nof the State of Michigan across 2,000 simulations"
+fig.subtitle <- "Assumption achieved: expected compound return = 8; closed plan and open plan"
+fig_stchDet.ERC_GF_Med <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
+  # left_join(results_all  %>% 
+  #             filter(runname  %in% c("RS1.closed", "RS1.open"), sim == 0) %>% 
+  #             select(runname, year, ERC_det = ERC) %>% 
+  #             mutate(ERC_det = ERC_det/1e6)) %>% 
+  select(runname, year, ERC_GF.q50) %>% 
+  #gather(type, value, -runname, -year) %>% 
+  ggplot(aes(x = year, y = ERC_GF.q50,
+             color = runname,
+             shape = runname)) + 
+  theme_bw() + 
+  geom_line() + 
+  geom_point(size = 2) + 
+  coord_cartesian(ylim = c(0,6)) + 
+  scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
+  scale_y_continuous(breaks = seq(0, 50000, 1)) + 
+  scale_color_manual(values = c("black", RIG.red),  name = NULL,
+                     label  = c("Scenario 1\nAssumption Achieved: \nClosed Plan", 
+                                "Scenario 2\nAssumption Achieved: \nOpen Plan")) + 
+  scale_shape_manual(values = c(17, 16, 15, 18),  name = NULL, 
+                     label  = c("Scenario 1\nAssumption Achieved: \nClosed Plan", 
+                                "Scenario 2\nAssumption Achieved: \nOpen Plan")) +
+  labs(title = fig.title,
+       subtitle = fig.subtitle,
+       x = NULL, y = "Percent of general fund") + 
+  theme(axis.text.x = element_text(size = 8)) + 
+  guides(color = guide_legend(keywidth = 1.5, keyheight = 3))+
+  RIG.theme()
+fig_stchDet.ERC_GF_Med
+
+
+
 # Distribution of ERC as % general fund
-fig.title <- "Distribution of employer contribution rates across simulations"
+fig.title <- "Distribution of employer contribution as a percentage of general fund across simulations"
 fig.subtitle <- "Assumption achieved: expected compound return = 8%"
 fig_stchDet.ERCdist <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
-  left_join(results_all  %>% 
-              filter(runname  %in% c("RS1.closed", "RS1.open"), sim == 0) %>% 
-              select(runname, year, ERC_det = ERC_GF)) %>% 
-  select(runname, year, ERC_GF.q25, ERC_GF.q50, ERC_GF.q75, ERC_det) %>% 
+  # left_join(results_all  %>% 
+  #             filter(runname  %in% c("RS1.closed", "RS1.open"), sim == 0) %>% 
+  #             select(runname, year, ERC_det = ERC_GF)) %>% 
+  select(runname, year, ERC_GF.q25, ERC_GF.q50, ERC_GF.q75) %>% 
   gather(type, value, -runname, -year) %>% 
+  mutate(runname = factor(runname, labels = c(lab_s1, lab_s2))) %>%  
   ggplot(aes(x = year, y = value,
-             color = factor(type, levels = c("ERC_GF.q75", "ERC_GF.q50", "ERC_GF.q25", "ERC_det")),
-             shape = factor(type, levels = c("ERC_GF.q75", "ERC_GF.q50", "ERC_GF.q25", "ERC_det")))) + 
-  facet_grid(.~runname) + 
+             color = factor(type, levels = c("ERC_GF.q75", "ERC_GF.q50", "ERC_GF.q25")),
+             shape = factor(type, levels = c("ERC_GF.q75", "ERC_GF.q50", "ERC_GF.q25")))) + 
+  facet_grid(. ~ runname) + 
   theme_bw() + 
   geom_line() + 
   geom_point(size = 2) + 
@@ -351,9 +506,9 @@ fig_stchDet.ERCdist <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.
   scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
   scale_y_continuous(breaks = seq(0, 500, 1)) + 
   scale_color_manual(values = c(RIG.red, RIG.blue, RIG.green, "black"),  name = NULL, 
-                     label  = c("75th percentile", "50th percentile", "25th percentile", "Deterministic")) + 
+                     label  = c("75th percentile", "50th percentile", "25th percentile")) + 
   scale_shape_manual(values = c(17, 16, 15, 18),  name = NULL, 
-                     label  = c("75th percentile", "50th percentile", "25th percentile", "Deterministic")) +
+                     label  = c("75th percentile", "50th percentile", "25th percentile")) +
   labs(title = fig.title,
        subtitle = fig.subtitle,
        x = NULL, y = "Percent") + 
@@ -366,21 +521,21 @@ fig_stchDet.ERCdist
 fig.title <- "Probability of funded ratio below 40% in any year up to the given year"
 fig.subtitle <- "Assumption achieved; expected compound return = 8%"
 fig_stchDet.FR40less <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
+  mutate(runname = factor(runname, labels = c(lab_s1, lab_s2))) %>%  
   select(runname, year, FR40less) %>% 
   #mutate(FR40less.det = 0) %>% 
   #gather(variable, value, -year) %>% 
   ggplot(aes(x = year, y = FR40less, color = runname, shape = runname)) + theme_bw() + 
   geom_point(size = 2) + geom_line() + 
-  coord_cartesian(ylim = c(0,10)) + 
-  scale_y_continuous(breaks = seq(0,200, 1)) +
+  coord_cartesian(ylim = c(0,35)) + 
+  scale_y_continuous(breaks = seq(0,200, 5)) +
   scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
-  scale_color_manual(values = c(RIG.red,RIG.blue),  name = "", 
-                     label  = c("Closed plan", "Open plan")) + 
-  scale_shape_manual(values = c(17,16),  name = "", 
-                     label  = c("Closed plan", "Open plan")) +
+  scale_color_manual(values = c("black",RIG.red),  name = "") + 
+  scale_shape_manual(values = c(17,16),  name = "") +
   labs(title = fig.title,
        subtitle = fig.subtitle,
        x = NULL, y = "Probability (%)") + 
+  guides(color = guide_legend(keywidth = 1.5, keyheight = 3))+
   RIG.theme()
 fig_stchDet.FR40less
 
@@ -389,6 +544,7 @@ fig_stchDet.FR40less
 fig.title <- "Probability of employer contribution rising more than 5% of general fund \nin a 5-year period at any time prior to and including the given year"
 fig.subtitle <- "Assumption achieved; expected compound return = 8%"
 fig_stchDet.ERChike <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.open")) %>% 
+  mutate(runname = factor(runname, labels = c(lab_s1, lab_s2))) %>%  
   select(runname, year, ERC_hike) %>% 
   #mutate(ERChike.det = 0) %>% 
   #gather(variable, value, - year) %>% 
@@ -397,13 +553,12 @@ fig_stchDet.ERChike <- df_all.stch %>% filter(runname %in% c("RS1.closed", "RS1.
   coord_cartesian(ylim = c(0,50)) + 
   scale_y_continuous(breaks = seq(0,200, 5)) +
   scale_x_continuous(breaks = c(2016, seq(2020, 2045, 5))) + 
-  scale_color_manual(values = c(RIG.red,RIG.blue),  name = "", 
-                     label  = c("Closed plan", "Open plan")) + 
-  scale_shape_manual(values = c(17,16),  name = "", 
-                     label  = c("Closed plan", "Open plan")) +
+  scale_color_manual(values = c("black", RIG.red),  name = "") + 
+  scale_shape_manual(values = c(17,16),  name = "") +
   labs(title = fig.title,
        subtitle = fig.subtitle,
        x = NULL, y = "Probability (%)") + 
+  guides(color = guide_legend(keywidth = 1.5, keyheight = 3))+
   RIG.theme()
 fig_stchDet.ERChike
 
@@ -591,7 +746,7 @@ results_dc <- results_all %>%
 
 
 
-fig.title <- "Funded ratios under different assumed rate of returns"
+fig.title <- "Employer contributions as percentage of general fund \nunder different assumed rate of returns"
 fig.subtitle <- "Deterministic annual return of 7.5%"
 fig_DC.DetERC <- 
 results_dc %>% 
@@ -614,7 +769,7 @@ results_dc %>%
 fig_DC.DetERC
 
 
-fig.title <- "Employer contribution as a percentage of general fund revnue \nunder different assumed rate of returns"
+fig.title <- "Funded ratios \nunder different assumed rate of returns"
 fig.subtitle <- "Deterministic annual return of 7.5%"
 fig_DC.DetFR <- 
 results_dc %>% 
@@ -778,6 +933,28 @@ fig_DC.ERChigh
 
 
 
+#*************************************************************************
+##                     Summary tables ####
+#*************************************************************************
+
+
+
+runs_report <- c("RS1.closed", "RS1.open", "RS2.closed", "RS3.closed", "RS4.closed", "RS5.closed")
+lvl_measures  <- c("FR40less", "ERC_hike")
+
+# Summary tables for the three major risk measures
+tab_summary <- 
+  df_all.stch %>% filter(runname %in% c(runs_report ), year == 2046) %>% 
+  select(runname, FR40less, ERC_hike) %>% 
+  gather(Measure, value, -runname) %>% 
+  mutate(runname = factor(runname, levels = runs_report),
+         Measure = factor(Measure, levels = lvl_measures)) %>% 
+  spread(runname, value)
+
+tab_summary
+
+write.xlsx2(tab_summary1, paste0(Outputs_folder, "tables.xlsx"), sheetName = "summary", append = TRUE)
+
 
 #*************************************************************************
 ##                        Saving results                              ####
@@ -796,22 +973,34 @@ g.width.3col  <- 15*0.8
 
 ggsave(file = paste0(Outputs_folder, "distReturn.png"),   fig_distReturn, height = 7*0.8, width = 10*0.8)
 
-# closed and open plan
-ggsave(file = paste0(Outputs_folder, "stchDet.FRdist.png"),  fig_stchDet.FRdist, height = 7*0.8, width = 10*0.8)
-ggsave(file = paste0(Outputs_folder, "stchDet.ERCdist.png"), fig_stchDet.ERCdist, height = 6*0.8, width = 13*0.8)
 
-ggsave(file = paste0(Outputs_folder, "stchDet.FR40less.png"), fig_stchDet.FR40less, height = 7*0.8, width = 10*0.8)
-ggsave(file = paste0(Outputs_folder, "stchDet.ERChike.png"),  fig_stchDet.ERChike, height  = 7*0.8, width = 10*0.8)
-ggsave(file = paste0(Outputs_folder, "stchDet.ERChigh.png"),  fig_stchDet.ERChigh, height  = 7*0.8, width = 10*0.8)
+
+
+# closed and open plan
+
+ggsave(file = paste0(Outputs_folder, "AL.png"),  fig_AL,  height = g.height.1col, width = g.width.1col)
+
+ggsave(file = paste0(Outputs_folder, "stchDet.FRdist.png"),  fig_stchDet.FRdist,  height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "stchDet.ERCdist.png"), fig_stchDet.ERCdist, height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "stchDet.ERC.USDdist.png"), fig_stchDet.ERC.USDdist, height = g.height.2col, width = g.width.2col)
+
+
+ggsave(file = paste0(Outputs_folder, "stchDet.ERC_Med.png"), fig_stchDet.ERC_Med, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "stchDet.ERC_GF_Med.png"), fig_stchDet.ERC_GF_Med, height = g.height.1col, width = g.width.1col)
+
+
+ggsave(file = paste0(Outputs_folder, "stchDet.FR40less.png"), fig_stchDet.FR40less, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "stchDet.ERChike.png"),  fig_stchDet.ERChike, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "stchDet.ERChigh.png"),  fig_stchDet.ERChigh, height = g.height.1col, width = g.width.1col)
 
 
 # low returns and high volatility
 ggsave(file = paste0(Outputs_folder, "RS.FRdist.png"),   fig_RS.FRdist,  height = g.height.3col, width = g.width.3col)
 ggsave(file = paste0(Outputs_folder, "RS.ERCdist.png"),  fig_RS.ERCdist, height = g.height.3col, width = g.width.3col)
 
-ggsave(file = paste0(Outputs_folder, "RS.FR40less.png"), fig_RS.FR40less, height = g.height.2col, width = g.width.1col)
-ggsave(file = paste0(Outputs_folder, "RS.ERChike.png"),  fig_RS.ERChike,  height = g.height.2col, width = g.width.1col)
-ggsave(file = paste0(Outputs_folder, "RS.ERChigh.png"),  fig_RS.ERChigh,  height = g.height.2col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "RS.FR40less.png"), fig_RS.FR40less, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "RS.ERChike.png"),  fig_RS.ERChike,  height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "RS.ERChigh.png"),  fig_RS.ERChigh,  height = g.height.1col, width = g.width.1col)
 
 
 # Lowering discount rate
@@ -823,15 +1012,13 @@ ggsave(file = paste0(Outputs_folder, "DC.DetFR.png"),  fig_DC.DetFR, height = g.
 ggsave(file = paste0(Outputs_folder, "DC.FRdist.png"),   fig_DC.FRdist,  height = g.height.2col, width = g.width.2col)
 ggsave(file = paste0(Outputs_folder, "DC.ERCdist.png"),  fig_DC.ERCdist, height = g.height.2col, width = g.width.2col)
 
-ggsave(file = paste0(Outputs_folder, "DC.FR40less.png"), fig_DC.FR40less, height = g.height.2col, width = g.width.1col)
-ggsave(file = paste0(Outputs_folder, "DC.ERChike.png"),  fig_DC.ERChike,  height = g.height.2col, width = g.width.1col)
-ggsave(file = paste0(Outputs_folder, "DC.ERChigh.png"),  fig_DC.ERChigh,  height = g.height.2col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "DC.FR40less.png"), fig_DC.FR40less, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "DC.ERChike.png"),  fig_DC.ERChike,  height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "DC.ERChigh.png"),  fig_DC.ERChigh,  height = g.height.1col, width = g.width.1col)
 
 
+ggsave(file = paste0(Outputs_folder, "projGenFun.png"),  fig_projGenFund,  height = g.height.1col, width = g.width.1col)
 
-
-
-fig_stchDet.ERChike
 
 
 

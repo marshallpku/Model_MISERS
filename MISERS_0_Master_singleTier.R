@@ -5,11 +5,6 @@ Tier_select <- "t1"
 
 
 
-
-
-
-
-
 #*********************************************************************************************************
 # 1.1 Load data,  for all tiers ####
 #*********************************************************************************************************
@@ -136,7 +131,20 @@ salary         <- get_salary_proc(Tier_select)
 benefit        <- get_benefit_tier(Tier_select)
 benefit.disb   <- get_benefit.disb_tier(Tier_select)
 init_pop       <- get_initPop_tier(Tier_select)
+
+# Use distribution of new entrants for average plan (From M1 report)
 entrants_dist  <- get_entrantsDist_tier("t1")
+entrants_dist.old <- entrants_dist
+
+load("Data_inputs/entrants_dist.average.RData")
+entrants_dist <- entrants_dist[seq_along(entrants_dist.old)]
+entrants_dist <- entrants_dist/sum(entrants_dist)
+
+# entrants_dist
+# df <- data.frame(MISERS = c(entrants_dist.old, rep(0, 10)), avg = entrants_dist) %>% 
+#   mutate(age = 19 + row_number() )
+# df %>% gather(key, value, -age) %>% 
+#   ggplot(aes(x = age, y = value, color = key)) + geom_line()
 
 
 

@@ -394,7 +394,20 @@ fn_actives <- function(sheet, file_ = file_memberData){
 
 init_actives_all <- bind_rows(fn_actives("Actives_t1_AV2014_adj"))
 
-init_actives_all
+
+# MISERS ONLY!
+init_actives_all %<>%
+  group_by(planname, yos) %>%
+  mutate(salary = ifelse(!is.nan(salary), salary,
+                         salary[!is.nan(salary)][1])) %>% 
+  ungroup
+
+# x <- init_actives_all %>% 
+#   group_by(planname, yos) %>% 
+#   mutate(salary = ifelse(!is.nan(salary), salary,
+#                          salary[!is.nan(salary)][1]))
+# 
+
 
 #*************************************************************************************************************
 #                             Importing initial retirees (Temporary)                                     #####                  

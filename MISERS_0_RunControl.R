@@ -247,9 +247,9 @@ for(runName in runList$runname){
 
 
 
-load("Results/results_RS1.RData")
-
-penSim_results %>% filter(sim == 0)
+# load("Results/results_RS1.RData")
+# 
+# penSim_results %>% filter(sim == 0)
 
 
 
