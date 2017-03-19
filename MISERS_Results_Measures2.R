@@ -140,6 +140,7 @@ RIG.theme <- function(){
 # Runs used in the report 
 runs_RS.closed <- paste0("RS", 1:5, ".closed")
 runs_RS.open   <- paste0("RS", 1:4, ".open")
+runs_RS.alt   <- c("RS1.closed.min5")
 
 
 runs_RS.closed_labels <- c("Assumption Achieved; closed plan",
@@ -153,6 +154,9 @@ runs_RS.open_labels <- c("Assumption Achieved, open plan",
                          "High volatility, open plan",
                          "7.5% returns, open plan")
 
+runs_RS.alt_labels <- c("Min amort = 5 years")
+
+
 lab_s1 <- "Scenario 1 \nAssumption Achieved: \nClosed Plan"
 lab_s2 <- "Scenario 2 \nAssumption Achieved: \nOpen Plan"
 lab_s3 <- "Scenario 3 \n15 Years of Low Returns"
@@ -161,8 +165,8 @@ lab_s5 <- "Scenario 5 \nCurrent Return Assumption"
 lab_s6 <- "Scenario 6 \nLower Return Assumption"
 
 
-runs_all <- c(runs_RS.closed, runs_RS.open)
-runs_all_labels <- c(runs_RS.closed_labels, runs_RS.open_labels)
+runs_all <- c(runs_RS.closed, runs_RS.open, runs_RS.alt)
+runs_all_labels <- c(runs_RS.closed_labels, runs_RS.open_labels, runs_RS.alt_labels)
 
 
 
@@ -221,6 +225,8 @@ df_all.stch %<>%
 
 df_all.stch %>% filter(runname == "RS1.closed")
 df_all.stch %>% filter(runname == "RS1.open")
+
+df_all.stch %>% filter(runname == "RS1.closed.min5")
 
 df_all.stch %>% filter(runname == "RS2.closed")
 df_all.stch %>% filter(runname == "RS3.closed")
@@ -1058,6 +1064,26 @@ ggsave(file = paste0(Outputs_folder, "fig9_DC.FR40less.pdf"), fig_DC.FR40less, h
 ggsave(file = paste0(Outputs_folder, "fig10_DC.ERChike.pdf"),  fig_DC.ERChike,  height = g.height.1col, width = g.width.1col)
 
 ggsave(file = paste0(Outputs_folder, "fig11_projGenFun.pdf"),  fig_projGenFund,  height = g.height.1col, width = g.width.1col)
+
+
+ggsave(file = paste0(Outputs_folder, "fig1_AL.png"),  fig_AL,  height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "fig2_stchDet.FR40less.png"), fig_stchDet.FR40less, height = g.height.1col, width = g.width.1col)
+
+ggsave(file = paste0(Outputs_folder, "fig3_stchDet.ERC.USDdist.png"), fig_stchDet.ERC.USDdist, height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "fig4_stchDet.ERCdist.png"), fig_stchDet.ERCdist, height = g.height.2col, width = g.width.2col)
+ggsave(file = paste0(Outputs_folder, "fig5_stchDet.ERChike.png"),  fig_stchDet.ERChike, height = g.height.1col, width = g.width.1col)
+
+ggsave(file = paste0(Outputs_folder, "fig6_RS.FR40less.png"), fig_RS.FR40less, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "fig7_RS.ERChike.png"),  fig_RS.ERChike,  height = g.height.1col, width = g.width.1col)
+
+ggsave(file = paste0(Outputs_folder, "fig8_DC.DetERC.png"), fig_DC.DetERC,  height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "fig9_DC.FR40less.png"), fig_DC.FR40less, height = g.height.1col, width = g.width.1col)
+ggsave(file = paste0(Outputs_folder, "fig10_DC.ERChike.png"),  fig_DC.ERChike,  height = g.height.1col, width = g.width.1col)
+
+ggsave(file = paste0(Outputs_folder, "fig11_projGenFun.png"),  fig_projGenFund,  height = g.height.1col, width = g.width.1col)
+
+
+
 
 
 # 

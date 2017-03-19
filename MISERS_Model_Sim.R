@@ -435,7 +435,7 @@ run_sim <- function(Tier_select_,
          # For test simulation (k = -1) and deterministic simulation,
          # amortization period does not reset.
          if(j == 1) m <- m.year1 else {
-           m <- ifelse(m == 1, 1, m - 1)
+           m <- ifelse(m == m.min, m.min, m - 1)
          }
        }
       }
