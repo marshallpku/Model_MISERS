@@ -41,6 +41,8 @@ get_Population <- function(init_pop_         = init_pop,
  assign_parmsList(Global_paramlist_, envir = environment())
  assign_parmsList(paramlist_,        envir = environment())  
 
+ 
+ # Share of 
  pct.QSS <- pct.ca.F * pct.female + pct.ca.M * pct.male
  
 #*************************************************************************************************************
@@ -94,12 +96,11 @@ newDisb.act <- numeric(nyear)
 # Note on initial retirees: It is assumed that all initial retirees entered the workforce at age 54 and retireed in year 1. 
 # Altough this may produce yos greater than r.max - ea.min, it is irrelevant to the calculation since we do not care about initial retirees' yos.  
 # 
-wf_active[, , 1]   <- init_pop_$actives 
-wf_la[, , 1, 1]    <- init_pop_$retirees
-wf_term[, , 1, 1]  <- init_pop_$terms     # note that the initial terms are assigned to year.term = init.year - 1
-wf_disb.la[, , 1, 1]  <- init_pop_$disb
+wf_active[, , 1]     <- init_pop_$actives 
+wf_la[, , 1, 1]      <- init_pop_$retirees
+wf_term[, , 1, 1]    <- init_pop_$terms     # note that the initial terms are assigned to year.term = init.year - 1
+wf_disb.la[, , 1, 1] <- init_pop_$disb
 # 
-
 
 
 
@@ -114,7 +115,7 @@ wf_disb.la[, , 1, 1]  <- init_pop_$disb
 
 # decrement_wf <- sapply(decrement.model_, function(x){x[is.na(x)] <- 0; return(x)}) %>% data.frame # just for safety
 
-decrement_wf <- decrement.model_ %>% mutate_each(funs(na2zero)) # just for safety 
+decrement_wf <- decrement.model_ %>% mutate_all(funs(na2zero)) # just for safety 
 
 
 # Define a function that produce transition matrices from decrement table. 
@@ -138,7 +139,7 @@ p_active2term    <- make_dmat("qxt")
 p_active2disb    <- make_dmat("qxd")
 p_active2disb.la <- make_dmat("qxd.la")
 p_active2dead    <- make_dmat("qxm.pre")
-p_active2deathBen<- make_dmat("qxm.pre") * pct.QSS
+p_active2deathBen<- make_dmat("qxm.pre")
 p_active2retiree <- make_dmat("qxr")
 p_active2la      <- make_dmat("qxr.la")
 
